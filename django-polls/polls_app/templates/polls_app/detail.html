@@ -1,0 +1,49 @@
+<!-- TUTORIAL 2 -->
+<!-- akan menampilkan question.
+     hasil dari query langsung ke database, 
+     yang dilakukan pada model detail -->
+<!-- {{question}} -->
+
+<!-- TUTORIAL 3 -->
+<!-- menampilkan isi dari attribute question_text pada model Question -->
+<!-- <h1>{{ question.question_text }}</h1> -->
+<!-- <ul> -->
+    <!-- buat perulangan sebanyak question.choice_set.all() -->
+    <!-- {% for choice in question.choice_set.all %} -->
+        <!-- tampilkan attribute choice_text pada model Choice -->
+        <!-- <li>{{ choice.choice_text }}</li> -->
+        <!-- end perulangan -->
+    <!-- {% endfor %} -->
+<!-- </ul> -->
+    
+<!-- TUTORIAL 4 -->
+<!-- title -->
+<h1>{{ question.question_text }}</h1>
+<!-- jika error, tam[pilkan error message dengan tag <strong>] -->
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<!-- form -->
+<!-- action ke urls polls_app/4/vote/ -->
+<!-- method post, berati kirimkan data ke url polls_app/4/vote/  -->
+<form action="{% url 'polls_app:vote' question.id %}" method="post">
+<!--  -->
+{% csrf_token %}
+<!-- buat perulangan sebanyak choice yang ada di spesifik question(question yang terpilih) -->
+{% for choice in question.choice_set.all %}
+    <!-- buat input form sebanyak perulangan-nya -->
+    <!-- type-nya radio, beri name agar bisa di insert ke database dengan name-nya -->
+    <!-- beri id sesuai hitungan perulangan-nya(urutan perulangan dan pasti berbeda) -->
+    <!-- beri value yaitu id dari si choice sendiri -->
+    <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}">
+    <!-- buat label untuk id input -->
+    <!-- tulisannya berisi choise_text dari database -->
+    <label for="choice{{ forloop.counter }}">{{ choice.choice_text }}</label><br>
+<!-- hentikan perulangan -->
+{% endfor %}
+<!-- buat button submit -->
+<!-- tulisannya "Vote" -->
+<input type="submit" value="Vote">
+</form>
+
+<!-- kembali ke index.html -->
+<a href="{% url 'polls_app:index' %}">kembali ke pertanyaan?</a>

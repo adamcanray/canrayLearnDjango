@@ -1,0 +1,15 @@
+<!-- load staticd dari folder static di dalam folder aplikasi poll_app -->
+<!-- /polls_app/static/ -->
+{% load static %}
+<!-- menyambungkan halaman index ke css -->
+<link rel="stylesheet" href="{% static 'polls_app/style.css' %}">
+<!-- halaman yang menjadi view template untuk /polls_app/index.html -->
+{% if latest_question_list %}
+    <ul>
+    {% for question in latest_question_list %}
+        <li><a href="{% url 'polls_app:detail' question.id %}">{{ question.question_text }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}
