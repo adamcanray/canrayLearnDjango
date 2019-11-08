@@ -4,6 +4,8 @@ Versi Python: **3.7.0**
 Versi Django: **2.2.6**
 
 Structure Files:
+* Env/ </br>
+  folder ini harus ada sebagai **virtualenv**. saya tidak meng-upload nya pada repo ini karena size yang lumayan hingga 109 MB(tergantung packages apasaja yang sudah terinstall). saya bisa membuat **virtualenv** dengan command berikut: ```python -m venv Env``` -- artinya kita ingin membuat sebuah **virtualenv** dengan nama folder-nya **Env**. pastikan virtual Env berada pada **main folder**.
 * 0_catatan/
   * **0000_race_condition** -- cara mengatasi **race condition** pada django - Source: https://docs.djangoproject.com/en/2.2/ref/models/expressions/#f-expressions.
   * **tutorial_part_1.txt** -- catatan panjang perjalanan saya pada tutorial django part_1 - Source: https://docs.djangoproject.com/en/2.2/intro/tutorial01/
