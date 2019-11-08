@@ -1,0 +1,85 @@
+source: https://docs.djangoproject.com/en/2.2/intro/
+
+configurasi project django:
+source: https://docs.djangoproject.com/en/2.2/intro/tutorial01/
+langkah pertama:
+-install python, actifkan PATH nya agar mudah ketika mengakses pythonnya di berbagai macam directory
+-cek versi python: python --version
+-buat directory, contoh: C:/Dev/belajar_django/
+-lalu pada cmd arahkan ke folder diatas, dan gunakan perintah: python -m venv Env
+-perintah diatas itu untuk membuat virtual Enveretment terpisah dari pythonnya dan membuat nama foldernya Env
+-pastikan di pythonnya sudah terinstall pip terbaru, pip list
+
+langkah kedua:
+-masuk ke evenrenment nya: Env\Scripts\activate.bat
+-install django: pip install Django=versi*
+-cek django sudah terinstall atau belum: pip list
+-buat project: django-admin startproject namaProject
+
+langkah ketiga:
+-menggunakan cmd masuk ke folder project, contoh: C:/Dev/belajar_django/mywebsite
+-lalu jalankan server dengan menjalankan manage.py
+-jalankan server: manage.py runserver
+-selamat kita sudah berhasil membuat web server localhost default: 127.0.0.1:8000
+-custom port: manage.py sunserver 8080
+-custom ip: manage.py sunserver 0:8080
+-buka browser dengan masuk ke url diatas, maka kita akan ditampilkan halaman django(sudah berhasil dibuat)
+-untuk keluar dari server: ctrl + c
+-untuk keluar dari Env: deactivate
+
+setting up:
+-python
+-django
+-virtual enverenment
+-lalu browsernya
+
+
+configurasi untuk membuat app di django, part 1:
+langkah pertama:
+-buat directory app-nya, pastikan command kita berada di directory yang sam dengan manage.py, perintahnya: python manage.py startapp <namaAppNya>
+-tulis views kita, polls_app/views.py, contoh: 
+	from django.http import HttpResponse
+
+	def index(request):
+    	    return HttpResponse("Hello, world. You're at the polls index.")
+-untuk memanggil view kitaperlu memetakannya pada sebuah URL
+-Untuk membuat URLconf di direktori polls_app, buat file bernama urls.py
+-nah, file urls.py kita bisa isikan kode ini:
+	from django.urls import path
+
+	from . import views
+
+	urlpatterns = [
+    		path('', views.index, name='index'),
+	]
+-Langkah selanjutnya adalah mengarahkan URL root pada modul polls_app.urls. 
+-Di mywebsite/urls.py, tambahkan import django.urls.include dan masukkan include() di list urlpatterns, code akan sperti ini:
+	from django.contrib import admin
+	from django.urls import include, path
+
+	urlpatterns = [
+	    path('polls/', include('polls.urls')),
+	    path('admin/', admin.site.urls),
+	]
+-Fungsi include() memungkinkan referensi URL lain. 
+-Setiap kali Django bertemu include(), ia memotong bagian mana pun dari URL yang cocok dengan titik itu dan mengirimkan string yang tersisa ke URLconf yang disertakan untuk diproses lebih lanjut.
+-Gagasan di balik include () adalah untuk memudahkan plug-and-play URL.
+-jalankan polls_app, dengan perintah: python manage.py runserver
+-masuk ke 127.0.0.1:8000/polls_app
+
+
+Penjelasan:
+-Fungsi path () melewati empat argumen, dua diperlukan: rute dan tampilan, dan dua opsional: kwargs, dan nama. Pada titik ini, perlu ditinjau untuk apa argumen ini.
+
+-argumen path (): route¶
+ rute adalah string yang berisi pola URL. Saat memproses permintaan, Django mulai pada pola pertama di urlpatterns dan masuk daftar, membandingkan URL yang diminta dengan masing-masing pola hingga menemukan yang cocok.
+ Pola tidak mencari parameter GET dan POST, atau nama domain. Misalnya, dalam permintaan ke https://www.example.com/myapp/, URLconf akan mencari myapp /. Dalam permintaan ke https://www.example.com/myapp/?page=3, URLconf juga akan mencari myapp /.
+
+-argumen path (): view¶
+ Ketika Django menemukan pola yang cocok, ia memanggil fungsi tampilan yang ditentukan dengan objek HttpRequest sebagai argumen pertama dan nilai "yang ditangkap" dari rute sebagai argumen kata kunci. Kami akan memberikan sedikit contoh dalam hal ini.
+
+-argumen path (): kwargs¶
+ Argumen kata kunci sewenang-wenang dapat diteruskan dalam kamus ke tampilan target. Kami tidak akan menggunakan fitur Django ini dalam tutorial.
+
+-argumen path (): name¶
+ Memberi nama URL memungkinkan Anda untuk merujuknya secara jelas dari tempat lain di Django, terutama dari dalam templat. Fitur hebat ini memungkinkan Anda untuk melakukan perubahan global pada pola URL proyek Anda sambil hanya menyentuh satu file.

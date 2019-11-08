@@ -1,0 +1,211 @@
+tutorial 7 - source: 
+
+-Tutorial ini dimulai ketika Tutorial 6 tinggalkan. Kami melanjutkan aplikasi polls_app Web dan akan fokus 
+*-pada penyesuaian situs admin yang dibuat secara otomatis Django yang pertama kali kami eksplorasi di Tutorial 2.
+
+Kustomisasi formulir admin/Customize the admin form
+-dengan mendaftarkan model Question dengan admin.site.register(Question), django mampu membangun representasi formulir default.
+-Seringkali, Anda ingin menyesuaikan bagaimana formulir admin terlihat dan berfungsi. 
+*-Anda akan melakukan ini dengan memberi tahu Django opsi yang Anda inginkan saat mendaftarkan objek.
+-Mari kita lihat cara kerjanya dengan menyusun ulang bidang pada formulir edit. 
+*-Ganti baris admin.site.register(Question) dengan:
+*---- from django.contrib import admin
+*---- from .models import Question
+*---- class QuestionAdmin(admin.ModelAdmin):
+*----     fields = ['pub_date', 'question_text']
+*---- admin.site.register(Question, QuestionAdmin)
+-Anda akan mengikuti pola ini - membuat kelas model admin, lalu meneruskannya sebagai argumen kedua ke admin.site.register(Model, methodUrutanFieldAdmin) 
+*-setiap saat Anda perlu mengubah opsi admin untuk model.
+-Perubahan khusus di atas membuat "Tanggal publikasi" hadir sebelum "Question" field:
+*--- gambar di site admin ketika ingin membuat question baru urutanya fieldnya: date, time, question_test.
+-Ini tidak mengesankan dengan hanya dua bidang, tetapi untuk formulir admin dengan puluhan bidang, 
+*--memilih urutan intuitif adalah detail kegunaan yang penting.
+
+-Dan berbicara tentang formulir dengan lusinan bidang, Anda mungkin ingin membagi formulir menjadi bidang:
+*----- from django.contrib import admin
+*----- from .models import Question
+*----- class QuestionAdmin(admin.ModelAdmin):
+*-----     fieldsets = [
+*-----         (None,               {'fields': ['question_text']}),
+*-----         ('Date information', {'fields': ['pub_date']}),
+*-----     ]
+*----- admin.site.register(Question, QuestionAdmin)
+-Elemen pertama dari masing-masing tuple dalam fieldset adalah judul dari fieldset. Seperti apa bentuk formulir kami sekarang:
+*--- gambar field Question Text dan Data Publised(date,time) yang bidangnya sudah terpisah.
+
+Adding related objects/Menambahkan objek terkait
+-ok, kita mempunyai Question admin page,tetapi Question memiliki multiple Choice, dan admin page tidak menampilkan Choice.
+-belum/namun.
+-ada dua cara untuk memecahkan masalah ini. 
+*---pertama, daftarkan Choice dengan admin sama seperti yang kita lakukan pada Question, itu mudah:
+*---------- from django.contrib import admin
+*---------- from .models import Choice, Question
+*---------- # ...
+*---------- admin.site.register(Choice)
+-sekarang "Choices" sudah tersedia pada option Django admin. form "Add choice" akan terlihat seperti ini:
+*-----gambah dari form/formulir di admin site Chioce
+-di form itu, field "Question" adalah sebuah select-box yang mengandung semua question yang ada di database.
+-Django tahu itu sebuah ForegeinKey harus bisa direpresentasikan di admin site sebagai sebuah <select> box.
+-didalam kasus kita , hanya satu question tersedia pada point ini.
+-Perhatikan juga tautan "Add another" di sebelah "Question." Setiap objek dengan hubungan ForeignKey dengan yang lain mendapatkan ini secara gratis. 
+*--Ketika Anda mengklik "Add another", Anda akan mendapatkan popup window dengan formulir "Add question". 
+*--Jika Anda menambahkan pertanyaan di jendela itu dan mengklik "Save", Django akan menyimpan pertanyaan itu ke database 
+*--dan menambahkannya secara dinamis sebagai pilihan yang <select> pada form "Add Choices" yang Anda lihat.
+-Tapi, sungguh, ini adalah cara yang tidak efisien untuk menambahkan objek Choice ke sistem. 
+*--Akan lebih baik jika Anda bisa menambahkan banyak Pilihan secara langsung ketika Anda membuat objek Pertanyaan.
+*--Mari kita mewujudkannya.
+
+-Hapus panggilan register() untuk model Choice. Kemudian, edit kode Question registration untuk membaca:
+*--- from django.contrib import admin
+*--- from .models import Choice, Question
+*--- class ChoiceInline(admin.StackedInline):
+*---     model = Choice
+*---     extra = 3
+*--- class QuestionAdmin(admin.ModelAdmin):
+*---     fieldsets = [
+*---         (None,               {'fields': ['question_text']}),
+*---         ('Date information', {'fields': ['pub_date'], 'classes': ['collapse']}),
+*---     ]
+*---     inlines = [ChoiceInline]
+*--- admin.site.register(Question, QuestionAdmin)
+-ini memberitahu django: "Objek Choice diedit pada halaman Admin pertanyaan. Secara default, berikan bidang yang cukup untuk 3 pilihan"
+-muat/load "Add question" dan lihat apa bagaimana kelihatannya:
+*------ gambar admin site Questions yang sudah bisa menambahkan 3(default/extranya diisi 3) Choice langsung.
+-itu bekerja seperti ini: disana ada tiga slot untuk mengaitkan/membuat Choices - sebagai spesifikasi dari extra(extra=3) - 
+*--dan setiap kali anda kembali pada "Change" page untuk objek yang sudah dibuat, Anda mendapatkan tiga slot tambahan.
+-Di akhir tiga slot saat ini Anda akan menemukan tautan "Add another Choice". Jika Anda mengkliknya, 
+*--slot baru akan ditambahkan. Jika Anda ingin menghapus slot yang ditambahkan, Anda dapat mengklik X di kanan atas slot yang ditambahkan. 
+*--Perhatikan bahwa Anda tidak dapat menghapus tiga slot asli. Gambar ini menunjukkan slot yang ditambahkan:
+*----------gambar ketika menge-klik "Add another Choice/ada slot tambahan"
+-Tapi ada satu masalah kecil. Dibutuhkan banyak ruang layar untuk menampilkan semua bidang untuk memasukkan objek Pilihan terkait. 
+*--Untuk alasan itu, Django menawarkan cara tabular menampilkan objek terkait inline; 
+*--Anda hanya perlu mengubah deklarasi ChoiceInline untuk membaca:
+*--- class ChoiceInline(admin.TabularInline):
+*---     #...
+-Dengan TabularInline(bukan StackedInline), objek terkait ditampilkan dalam format berbasis tabel yang lebih ringkas:
+*----- tampilan admin site question Add question ketika menggunakan tabularInline
+-Note/Perhatikan bahwa ada kolom “Delete?” Tambahan yang memungkinkan penghapusan baris 
+*--yang ditambahkan menggunakan tombol “Add another Choice” dan baris yang telah disimpan.
+
+Customize the admin change list/Kustomisasi daftar change admin
+-Sekarang halaman admin Pertanyaan terlihat bagus, mari kita buat beberapa penyesuaian ke halaman "change list" - 
+*-yang menampilkan semua pertanyaan dalam sistem.
+-Beginilah tampilannya pada saat ini:
+*--- gambar admin site question list
+-Secara default, Django menampilkan str() dari setiap objek. Tetapi kadang-kadang akan lebih membantu jika kita dapat 
+*-menampilkan bidang individual. Untuk melakukannya, gunakan opsi admin list_display, yang merupakan tupel nama bidang 
+*-untuk ditampilkan, sebagai kolom, pada halaman change lists untuk objek:
+*---- class QuestionAdmin(admin.ModelAdmin):
+*----     # ...
+*----     list_display = ('question_text', 'pub_date')
+-Hanya untuk ukuran yang baik, mari kita juga menyertakan metode was_published_recently() dari Tutorial 2:
+*---- class QuestionAdmin(admin.ModelAdmin):
+*----     # ...
+*----     list_display = ('question_text', 'pub_date', 'was_published_recently')
+-sekarang question list page terlihat seperti ini:
+*---- tampilan question list page ada tambahan kolom yaitu WAS PUBLISHED RECENTLY
+-Anda bisa mengklik tajuk kolom untuk mengurutkan berdasarkan nilai-nilai itu - kecuali dalam kasus tajuk was_published_recently,
+*--karena menyortir berdasarkan output dari method arbitrary(method buatan sendiri) tidak didukung.
+*--Perhatikan juga bahwa tajuk kolom untuk was_published_recently adalah, secara default, nama method(dengan garis bawah diganti dengan spasi), 
+*--dan bahwa setiap baris berisi representasi string dari output.
+-Anda dapat meningkatkannya dengan memberikan metode tersebut (dalam polls_app/models.py) beberapa atribut, sebagai berikut:
+*--- class Question(models.Model):
+*---     # ...
+*---     def was_published_recently(self):
+*---         now = timezone.now()
+*---         return now - datetime.timedelta(days=1) <= self.pub_date <= now
+*---     was_published_recently.admin_order_field = 'pub_date'
+*---     was_published_recently.boolean = True
+*---     was_published_recently.short_description = 'Published recently?'
+-Untuk informasi lebih lanjut tentang properti metode ini, lihat list_display.
+-Edit file polls_app/admin.py Anda lagi dan tambahkan peningkatan ke halaman Daftar perubahan pertanyaan: filter menggunakan list_filter. 
+*--Tambahkan baris berikut ke QuestionAdmin:
+*---- list_filter = ['pub_date']
+-Itu menambahkan sidebar "Filter" yang memungkinkan orang memfilter daftar perubahan oleh bidang pub_date:
+*--- gambar sidebar filter pada question list page
+-Jenis filter yang ditampilkan tergantung pada jenis bidang tempat Anda memfilter. Karena pub_date adalah DateTimeField, 
+*--Django tahu untuk memberikan opsi filter yang sesuai: "Tanggal apa pun", "Hari ini", "7 hari terakhir", "Bulan ini", "Tahun ini".
+-Ini terbentuk dengan baik. Mari kita tambahkan beberapa kemampuan pencarian:
+*---- search_fields = ['question_text']
+-Itu menambahkan kotak pencarian di bagian atas daftar perubahan. Ketika seseorang memasukkan istilah pencarian, 
+*--Django akan mencari bidang question_text. Anda dapat menggunakan sebanyak mungkin bidang yang diinginkan - 
+*--meskipun karena menggunakan quesry LIKE di belakang layar, membatasi jumlah bidang pencarian ke angka yang masuk akal 
+*--akan membuat lebih mudah bagi database Anda untuk melakukan pencarian.
+-Sekarang juga saat yang tepat untuk mencatat bahwa change lists memberi Anda pagination gratis.
+*--Standarnya adalah menampilkan 100 item per halaman. change list pagination, search boxes, filters,
+*--date-hierarchies, dan column-header-ordering semua bekerja sama seperti yang Anda pikirkan.
+
+Customize the admin look and feel/Kustomisasi tampilan dan nuansa admin
+-Jelas, memiliki "Django administration" di bagian atas setiap halaman admin adalah konyol. Ini hanya teks placeholder.
+-Itu mudah diubah, meskipun, menggunakan sistem template Django. Admin Django diberdayakan oleh Django sendiri, 
+*--dan antarmuka-nya menggunakan sistem template Django sendiri.
+
+Customizing your project’s templates/Menyesuaikan templat proyek Anda
+-Buat direktori template di direktori proyek Anda (direktori yang berisi manage.py). 
+*--Templat dapat hidup di mana saja di sistem file Anda yang dapat diakses Django. (Django berjalan sebagai pengguna apa pun yang dijalankan oleh server Anda.) 
+*--Namun, menjaga template Anda di dalam proyek adalah konvensi yang baik untuk diikuti.
+-buka settings file kamu (mywebsite/settings.py, ingat) dan tambahkan sebuah DIRS option didalam TEAMPLATES setting:
+*--- TEMPLATES = [
+*---     {
+*---         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+*---         'DIRS': [os.path.join(BASE_DIR, 'templates')],
+*---         'APP_DIRS': True,
+*---         'OPTIONS': {
+*---             'context_processors': [
+*---                 'django.template.context_processors.debug',
+*---                 'django.template.context_processors.request',
+*---                 'django.contrib.auth.context_processors.auth',
+*---                 'django.contrib.messages.context_processors.messages',
+*---             ],
+*---         },
+*---     },
+*--- ]
+-DIRS adalah daftar direktori filesystem yang akan diperiksa ketika memuat templat Django; ini adalah jalur pencarian.
+
+-Organizing templates/Mengatur template
+*--- seperti static files, kita bisa memiliki/menggabungkan semua template kita, didalam satu template direktori besar,
+*--- dan itu akan bekerja sangat baik. bagaimanapun, templates milik aplikasi tertentu harus ditempatkan di direktori templat aplikasi itu (misal. polls_app/template) daripada proyek (template). 
+*--- Kami akan membahas secara lebih rinci dalam tutorial aplikasi yang dapat digunakan kembali mengapa kami melakukan ini.
+
+-sekarang buat sebuah direktori dengan nama admin didalam directori templates, dan copy template admin/base_site.html
+*--dalam direktori template Django admin default dalam kode sumber Django itu sendiri (Django/contrib/admin/templat) ke dalam direktori itu.
+-where are the Django source files(dimana source files django)?
+*--- jika kamu kesulitan mencari dimana lokasi source files Django pada system, jalankan command ini:
+*-------- $ python -c "import django; print(django.__path__)"
+-setelah itu, hanya edit file dan replace/gantikan {{ site_header|default:_('Django administration') }} (termasuk kurung kurawal)
+*--dengan site's name kita sendiri sesuai keinginan anda. Anda harus berakhir dengan bagian kode seperti:
+*------ {% block branding %}
+*------ <h1 id="site-name"><a href="{% url 'admin:index' %}">Polls Administration</a></h1>
+*------ {% endblock %}
+-Kami menggunakan pendekatan ini untuk mengajari Anda cara mengganti templat. Dalam proyek yang sebenarnya, Anda mungkin akan 
+*--menggunakan atribut django.contrib.admin.AdminSite.site_header untuk lebih mudah membuat penyesuaian khusus ini.
+-File template ini berisi banyak teks seperti {% block branding %} dan {{title}}. Tag '{%' dan '{{' adalah bagian dari bahasa template Django. 
+*--Ketika Django merender admin/base_site.html, bahasa templat ini akan dievaluasi untuk menghasilkan halaman HTML final, 
+*--sama seperti yang kita lihat di Tutorial 3.
+-Perhatikan bahwa salah satu template admin default Django dapat diganti. Untuk mengganti template, 
+*--lakukan hal yang sama dengan base_site.html - salin dari direktori default ke direktori kustom Anda, dan buat perubahan.
+
+Cutomizing your application's templates/Menyesuaikan templat aplikasi Anda
+-Pembaca yang cerdas akan bertanya: Tetapi jika DIRS kosong secara default, bagaimana Django menemukan templat admin default? 
+*--Jawabannya adalah, karena APP_DIRS disetel ke True, Django secara otomatis mencari template/ subdirektori dalam setiap 
+*--paket aplikasi, untuk digunakan sebagai fallback (jangan lupa bahwa django.contrib.admin adalah aplikasi).
+-Aplikasi jajak pendapat kami tidak terlalu rumit dan tidak memerlukan template admin khusus. Tetapi jika itu tumbuh 
+*--lebih canggih dan diperlukan modifikasi dari templat admin standar Django untuk beberapa fungsinya, akan lebih masuk 
+*--akal untuk memodifikasi templat aplikasi, daripada yang ada di proyek. Dengan begitu, Anda dapat memasukkan aplikasi 
+*--jajak pendapat dalam proyek baru apa pun dan yakinlah bahwa itu akan menemukan templat khusus yang diperlukan.
+-Lihat dokumentasi pemuatan templat untuk informasi lebih lanjut tentang bagaimana Django menemukan templatnya.
+
+Customize the admin index index page/Kustomisasi halaman indeks admin
+-Pada catatan yang sama, Anda mungkin ingin menyesuaikan tampilan dan nuansa halaman indeks admin Django.
+-Secara default, ini menampilkan semua aplikasi dalam INSTALLED_APPS yang telah didaftarkan dengan aplikasi admin, 
+*--dalam urutan abjad. Anda mungkin ingin membuat perubahan signifikan pada tata letak. Bagaimanapun, indeks mungkin 
+*--adalah halaman admin yang paling penting, dan harus mudah digunakan.
+-Template untuk dikustomisasi adalah admin/index.html. (Lakukan hal yang sama dengan admin/base_site.html di bagian sebelumnya - salin dari direktori default ke direktori templat kustom Anda). 
+*--Edit file, dan Anda akan melihatnya menggunakan variabel template bernama app_list. 
+*--Variabel itu berisi setiap aplikasi Django yang diinstal. Alih-alih menggunakan itu, Anda dapat menghubungkan 
+*--tautan kode ke halaman admin khusus objek dengan cara apa pun yang menurut Anda terbaik.
+
+apa selanjutnya?
+-Tutorial pemula berakhir di sini. Sementara itu, Anda mungkin ingin memeriksa beberapa petunjuk tentang ke mana harus pergi dari sini.
+*--Jika Anda terbiasa dengan kemasan Python dan tertarik mempelajari cara mengubah jajak pendapat menjadi 
+"aplikasi yang dapat digunakan kembali", lihat tutorial Tingkat Lanjut: Cara menulis aplikasi yang dapat digunakan kembali.

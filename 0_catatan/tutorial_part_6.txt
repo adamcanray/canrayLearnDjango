@@ -1,0 +1,71 @@
+Tutorial 6 - source: https://docs.djangoproject.com/en/2.2/intro/tutorial06/
+
+-Tutorial ini dimulai ketika Tutorial 5 tidak digunakan. Kami telah membangun aplikasi polls_app Web yang teruji, 
+*-dan sekarang kami akan menambahkan stylesheet dan gambar.
+-Selain HTML yang dihasilkan oleh server, aplikasi web umumnya perlu menyajikan file tambahan - 
+*-seperti gambar, JavaScript, atau CSS - yang diperlukan untuk membuat halaman web lengkap. 
+*-Dalam Django, kami menyebut file-file ini sebagai "static files(file statis)".
+-Untuk proyek-proyek kecil, ini bukan masalah besar, karena Anda dapat menyimpan file statis di suatu tempat 
+*-yang dapat ditemukan oleh server web Anda. Namun, dalam proyek yang lebih besar - 
+*-terutama yang terdiri dari beberapa aplikasi - berurusan dengan beberapa set file statis 
+*-yang disediakan oleh setiap aplikasi mulai menjadi rumit.
+-Untuk itulah django.contrib.staticfiles adalah untuk: 
+*-ia mengumpulkan file statis dari masing-masing aplikasi Anda (dan tempat lain yang Anda tentukan) 
+*-ke dalam satu lokasi yang dapat dengan mudah dilayani dalam produksi.
+
+Kustomisasi tampilan dan nuansa aplikasi Anda
+-pertama, buat direktori static di dalam polls_app direktori. django akan melihat static files disana,
+*-sangat mirip dengan bagaimana django mencari templates didalam polls_app/templates/.
+-django's STATICFILES_FINDERS settings_globals mengandung daftar pencari yang tahu bagaimana menemukan
+*-file statis dari berbagai sumber.
+-Salah satu defaultnya adalah AppDirectoriesFinder yang mencari subdirektori "static" di masing-masing INSTALLED_APPS, 
+*-seperti yang ada di polls_app yang baru saja kita buat. Situs admin menggunakan struktur direktori yang sama untuk file statisnya.
+-Di dalam direktori static yang baru saja Anda buat, buat direktori lain yang disebut polls_app dan di dalamnya buat file bernama style.css. 
+*-Dengan kata lain, stylesheet Anda harus di polls_app/static/polls_app/style.css. 
+*-Karena begitu cara kerja staticfile finder AppDirectoriesFinder, Anda bisa merujuk ke file statis ini di Django hanya sebagai polls_app/style.css, 
+*-mirip dengan cara Anda mereferensikan path untuk template.
+
+Penempatan nama file statis/Static file namespacing
+-Sama seperti template, kita mungkin bisa lolos dengan meletakkan file statis kita langsung di poll_app/static(daripada membuat subdirektori polls_app lagi), 
+*-tetapi itu sebenarnya akan menjadi ide yang buruk. Django akan memilih file statis pertama yang ditemukannya yang namanya cocok, 
+*-dan jika Anda memiliki file static dengan nama yang sama di aplikasi yang berbeda, Django tidak akan dapat membedakannya. 
+*-Kita harus bisa mengarahkan Django ke arah yang benar, dan cara termudah untuk memastikan ini adalah dengan menempatkan mereka di namespace. 
+*-Yaitu, dengan meletakkan file-file statis di dalam direktori lain yang dinamai untuk aplikasi itu sendiri(nama direktorinya sesuai dengan nama aplikasi-nya).
+
+masukan code ini pada stylesheet(polls_app/static/polls_app/style.css):
+*-li a {
+*-    color: green;
+*-}
+
+selanjutnya, tambahkan ini pada bagian atas dari polls_app/templates/polls/index.html:
+*- <!--load static files terlebih dahulu-->
+*-{% load static %}
+*- <!--menambahkan css-->
+*-<link rel="stylesheet" type="text/css" href="{% static 'polls/style.css' %}">
+
+-tag {% static %} pada template menghasilkan URL absolut dari file statis.
+-hanya itu yang kamu perlukan untuk pengembangan/development.
+-sekarang kita cek, start server(atau restart jika sebelumnya sudah berjalan):
+*--$ python manage.py runserver
+-lalu reload http://localhost:8000/polls_app/ dan kamu harus lihat question link menjadi hijau(Django style!)
+*-yang berarti stylesheet kamu dimuat dengan benar.
+
+menambahkan background image
+-selanjutnya, kita buat sebuah subdirectory untuk images. buat images subdirectory didalam direktory poll_app/static/polls_app/.
+- didalam direktory ini, masukan image background.gif. dalam kata lain, masukan image kita didalam polls_app/static/polls_app/images/background.gif.
+-setelah itu, tambahkan ini ke stylesheet(polls_app/static/polls_app/style.css):
+*--body {
+*--    background: white url("images/background.gif") no-repeat;
+*--}
+-Muat ulang http: // localhost: 8000 / polls / dan Anda akan melihat latar belakang dimuat di kiri atas layar.
+
+warning/Peringatan
+-Tentu saja tag template {% static %} tidak tersedia untuk digunakan dalam file statis seperti stylesheet Anda yang tidak dihasilkan oleh Django. 
+*-Anda harus selalu menggunakan jalur relatif untuk menautkan file statis Anda satu sama lain, 
+*-karena dengan demikian Anda dapat mengubah STATIC_URL(digunakan oleh tag templat statis untuk menghasilkan URL-nya)
+*-juga tanpa harus mengubah banyak jalur di file statis Anda juga.
+
+-Ini adalah dasar-dasarnya. Untuk detail lebih lanjut tentang pengaturan dan bit lain yang disertakan dengan kerangka kerja, 
+*-lihat file statis howto dan referensi staticfiles. Menyebarkan file statis membahas cara menggunakan file statis di server nyata.
+
+-Ketika Anda merasa nyaman dengan file statis, baca bagian 7 dari tutorial ini untuk mempelajari cara menyesuaikan situs admin Django yang dibuat secara otomatis.

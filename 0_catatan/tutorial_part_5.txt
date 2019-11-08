@@ -1,0 +1,468 @@
+https://docs.djangoproject.com/en/2.2/intro/tutorial05/
+
+kita telah membuat web-polls_app aplikasi, dan kita akan membuat sebuah tests otomatis untuk itu.
+
+perkenalan Automated Testing.
+- apa itu automated testing?
+*- Tests adalah rutinitas sederhana yang mengecek kode anda.
+-*****
+*- Testing dioprasikan di level yang berbeda. 
+*- beberapa Tests mungkin berlaku ke detail kecil (apakah metode model tertentu mengembalikan nilai seperti yang diharapkan?)
+*- Pengujian beroperasi pada level yang berbeda. 
+*- Beberapa tes mungkin berlaku untuk detail kecil (apakah metode model tertentu mengembalikan nilai seperti yang diharapkan?) 
+*- Sementara yang lain memeriksa operasi keseluruhan perangkat lunak (apakah urutan input pengguna di situs menghasilkan hasil yang diinginkan?). 
+*- Itu tidak berbeda dengan jenis pengujian yang Anda lakukan sebelumnya di Tutorial 2, 
+*- menggunakan shell untuk memeriksa perilaku metode, atau menjalankan aplikasi dan memasukkan data untuk memeriksa bagaimana perilakunya.
+-*****
+*- Apa yang berbeda dalam pengujian otomatis adalah bahwa pekerjaan pengujian dilakukan untuk Anda oleh sistem. 
+*- Anda membuat satu set tes sekali, dan kemudian saat Anda membuat perubahan pada aplikasi Anda, 
+*- Anda dapat memeriksa bahwa kode Anda masih berfungsi seperti yang Anda inginkan, 
+*- tanpa harus melakukan pengujian manual yang memakan waktu.
+
+mengapa kita butuh membuat tests
+*- mengapa membuat Tests, dan mengapa sekarang?
+-*****
+*- Anda mungkin merasa bahwa Anda memiliki cukup banyak di piring Anda hanya belajar Python / Django, 
+*- dan memiliki hal lain untuk dipelajari dan dilakukan mungkin tampak luar biasa dan mungkin tidak perlu. 
+*- Bagaimanapun, aplikasi polls_app kami bekerja dengan sangat senang sekarang; 
+*- melalui kesulitan membuat tes otomatis tidak akan membuatnya bekerja lebih baik. 
+*- Jika membuat aplikasi jajak pendapat adalah bagian terakhir dari pemrograman Django yang pernah Anda lakukan, 
+*- maka benar, Anda tidak perlu tahu cara membuat tes otomatis. 
+*- Tetapi, jika bukan itu masalahnya, sekarang adalah waktu yang tepat untuk belajar.
+
+Tests akan menghemat banyak waktu mu
+*- Hingga titik tertentu, ‘memeriksa apakah tampaknya berhasil’ akan menjadi tes yang memuaskan. 
+*- Dalam aplikasi yang lebih canggih, Anda mungkin memiliki banyak interaksi kompleks antar komponen.
+-*****
+*- Perubahan komponen mana pun dapat memiliki konsekuensi yang tidak terduga pada perilaku aplikasi. 
+*- Memeriksa bahwa itu masih 'tampaknya berfungsi' dapat berarti menjalankan fungsi kode Anda dengan dua puluh variasi data pengujian yang berbeda 
+*- hanya untuk memastikan Anda tidak merusak sesuatu - dan tidak menggunakan waktu Anda dengan baik(menguras waktu).
+-*****
+*- Itu terutama benar ketika tes otomatis dapat melakukan ini untuk Anda dalam hitungan detik. 
+*- Jika terjadi kesalahan, Tests juga akan membantu mengidentifikasi kode yang menyebabkan perilaku tak terduga.
+-*****
+*- Kadang-kadang mungkin tampak tugas untuk melepaskan diri dari pekerjaan pemrograman produktif 
+*- dan kreatif Anda untuk menghadapi bisnis tes menulis yang tidak menarik dan tidak menyenangkan, 
+*- terutama ketika Anda tahu kode Anda berfungsi dengan baik.
+-*****
+*-Namun, tugas menulis Tests jauh lebih memuaskan daripada menghabiskan berjam-jam menguji aplikasi Anda secara manual 
+*- atau mencoba mengidentifikasi penyebab masalah yang baru diperkenalkan.
+
+Tests tidak hanya mengidentifikasi problem, mereka mencegahnya
+*- Adalah keliru untuk menganggap tes hanya sebagai aspek negatif dari perkembangan
+-*****
+*- Tanpa tes, tujuan atau perilaku yang diinginkan dari suatu aplikasi mungkin agak buram. 
+*- Bahkan ketika itu adalah kode Anda sendiri, kadang-kadang Anda akan menemukan diri Anda mencoba mencari tahu apa sebenarnya yang dilakukannya.
+-*****
+*- Tests mengubah itu; mereka menerangi kode Anda dari dalam, dan ketika terjadi kesalahan, 
+*- mereka memfokuskan cahaya pada bagian yang salah - bahkan jika Anda bahkan tidak menyadari bahwa kode itu salah.
+
+Test membuat kode anda menjadi lebih menarik
+*- Anda mungkin telah membuat perangkat lunak yang brilian, 
+*- tetapi Anda akan menemukan bahwa banyak pengembang lain hanya akan menolak untuk melihatnya karena tidak memiliki tes; 
+*- tanpa tes, mereka tidak akan mempercayainya. 
+*- Jacob Kaplan-Moss, salah satu pengembang asli Django, mengatakan "Kode tanpa tes rusak oleh desain."
+-*****
+*- Bahwa pengembang lain ingin melihat tes dalam perangkat lunak Anda sebelum mereka 
+*- menganggapnya serius adalah alasan lain bagi Anda untuk mulai menulis tes.
+
+Tests membantu tim bekerja sama
+*- Poin-poin sebelumnya ditulis dari sudut pandang pengembang tunggal yang memelihara aplikasi. 
+*- Aplikasi yang kompleks akan dikelola oleh tim. 
+*- Tests menjamin bahwa kolega tidak secara tidak sengaja memecahkan kode Anda(dan bahwa Anda tidak melanggar kode mereka tanpa mengetahuinya). 
+*- Jika Anda ingin mencari nafkah sebagai programmer Django, Anda harus pandai menulis tests!
+
+strategi basic testing
+*- Ada banyak cara untuk mendekati tes menulis.
+-*****
+*-Beberapa programmer mengikuti disiplin yang disebut "test-driven development(pengembangan yang digerakkan oleh tes)"; 
+*-mereka benar-benar menulis tests mereka sebelum mereka menulis kode mereka. 
+*- Ini mungkin tampak kontra-intuitif, tetapi sebenarnya mirip dengan apa yang kebanyakan orang akan lakukan: 
+*-- mereka menggambarkan masalah, lalu membuat beberapa kode untuk menyelesaikannya. 
+*-Pengembangan yang digerakkan oleh Tests hanya memformalkan masalah dalam kasus uji Python.
+-*****
+*- Lebih sering, pendatang baru untuk pengujian akan membuat beberapa kode dan kemudian memutuskan bahwa itu harus memiliki beberapa tes. 
+*- Mungkin akan lebih baik untuk menulis beberapa tes sebelumnya, tetapi tidak ada kata terlambat untuk memulai.
+-*****
+*- Terkadang sulit untuk mencari tahu dari mana harus memulai dengan tests menulis. 
+*- Jika Anda telah menulis beberapa ribu baris Python, memilih sesuatu untuk diuji mungkin tidak mudah. 
+*- Dalam kasus seperti itu, akan bermanfaat untuk menulis pengujian pertama Anda saat berikutnya Anda membuat perubahan, 
+*- baik ketika Anda menambahkan fitur baru atau memperbaiki bug.
+-*****
+*-Jadi mari kita lakukan itu segera.
+
+menulis Test pertama kita
+-kita indektifikasi sebuah bug
+*- Untungnya, ada sedikit bug dalam aplikasi polls_app yang harus segera kami perbaiki: 
+*--- metode Question.was_published_recently() mengembalikan True jika Question diterbitkan dalam hari terakhir (yang benar) 
+*--- tetapi juga jika bidang pub_date Pertanyaan ada di masa depan (yang tentunya tidak).
+-*****
+*- Konfirmasikan bug dengan menggunakan shell untuk memeriksa metode pada question yang tanggalnya di masa depan:
+*--- dengan perintah ini pada cmd: python manage.py shell
+*--- tulis ini pada shell:
+*--- >>> import datetime
+*--- >>> from django.utils import timezone
+*--- >>> from polls.models import Question
+*--- >>> # create a Question instance with pub_date 30 days in the future
+*--- >>> future_question = Question(pub_date=timezone.now() + datetime.timedelta(days=30))
+*--- >>> # was it published recently?
+*--- >>> future_question.was_published_recently()
+*--- True
+-dari hal didalam future tidak 'recent', ini sangat salah.
+
+buat sebuah Test untuk menerangkan/meng-ekspose bug
+-ketika kita sudah selesai didalam shell untuk Test masalah yang benar maka kita akan lakukan hal serupa pada Automated Tests,
+*-jadi ayo masukan itu ke automated tests.
+-sebuah tempat yang konvensional untuk Aplikasi tests adalah di dalam aplikasi pada file tests.py;
+*-testing system akan otomatis mencari tests dalam file tests.py yang namanya berawalan test(bisa nama method).
+*-masukan code ini pada file tests.py di dalam aplikasi polls_app:
+*--- import datetime
+*--- from django.test import TestCase
+*--- from django.utils import timezone
+*--- from .models import Question
+*--- class QuestionModelTests(TestCase):
+*---     def test_was_published_recently_with_future_question(self):
+*---         """
+*---         was_published_recently() returns False for questions whose pub_date
+*---         is in the future.
+*---         """
+*---         time = timezone.now() + datetime.timedelta(days=30)
+*---         future_question = Question(pub_date=time)
+*---         self.assertIs(future_question.was_published_recently(), False)
+-kita memiliki sebuah subclass django.test.TestCase dengan sebuah method yang membuat sebuah Question
+*-yang didalamnya terkandung pub_date dari masa depan(tanggalnya masa depan).
+*-maka kita cek output dari was_published_recently() - yang akan menjadi false(yang tadinya akan selalu True walaupun tanggalnya dari masa depan).
+
+jalankan Tests
+-di dalam terminal, kita bisa menjalankan Tests kita:
+*--- python manage.py test polls_app
+-dan kamu akan melihat sesuatu seperti ini:
+*--- Creating test database for alias 'default'...
+*--- System check identified no issues (0 silenced).
+*--- F
+*--- ======================================================================
+*--- FAIL: test_was_published_recently_with_future_question (polls.tests.QuestionModelTests)
+*--- ----------------------------------------------------------------------
+*--- Traceback (most recent call last):
+*---   File "/path/to/mysite/polls/tests.py", line 16, in test_was_published_recently_with_future_question
+*---     self.assertIs(future_question.was_published_recently(), False)
+*--- AssertionError: True is not False
+*--- ----------------------------------------------------------------------
+*--- Ran 1 test in 0.001s
+*--- FAILED (failures=1)
+*--- Destroying test database for alias 'default'...
+#### dapat error yang berbeda?
+#### pastikan pada model Question itu sudah menerapkan/meng-import datetime dan timezone
+apa yang terjadi disini:
+*- manage.py test polls_app - perintah itu berjalan berdasarkan code yang kita tulis pada tests.py di dalam polls_app(looked for tests in the polls_app).
+*- dia menemukan sebuah subclass dari class django.test.TestCase(yaitu class yang ekstends ke TestCase - class QuestionModelTests(TestCase))
+*- dia membuat sebuah database spesial untuk purpose dari testing
+*- dia melihat test method - yang dimana nama-nya diawali dengan test
+*- didalam test_was_published_recently_with_future_question itu membuat sebuah Question yang mengandung pub_date dari 30 hari kedepan(future)
+*- ..dan menggunakan method assertIs(), itu discovered(menentang) yang tadi-nya was_published_recently mengembalikan nilai True(True is not False katanya),
+*------ tetapi kita mencari itu dan mengembalikan nilai False.
+*------ # AssertIs() akan menampilkan kemungkinan yang benar atau yang seharusnya harus-nya
+*------ # seharusnya adalah: jika pub_date dari masa depan maka False.
+*- ini diatas semua adalah tahap dari tests(untuk menemukan bug)
+
+fixing the bug/membetulkan bug
+-kita sudah tahu masalah-nya apa: 
+*-- Question.was_published_recently() harus mengembalikan False jika pub_date berasal dari future(masa depan).
+-ganti method-nya di dala, models.py:
+*--- def was_published_recently(self):
+*---     now = timezone.now()
+*---     return now - datetime.timedelta(days=1) <= self.pub_date <= now
+-jadi itu akan hanya mengembalikan True jika tanggal nya dimasalalu/sekarang(in the past).
+-dan jalankan Tests lagi:
+*--- Creating test database for alias 'default'...
+*--- System check identified no issues (0 silenced)
+*--- .
+*--- ----------------------------------------------------------------------
+*--- Ran 1 test in 0.001s
+*--- OK
+*--- Destroying test database for alias 'default'...
+-setelah identifikasi bug, kita menulis sebuah test yang meng-ekspose itu dan membenarkan bug di dalam code jadi test passes.
+-Banyak hal lain mungkin salah dengan aplikasi kita di masa depan,
+* --- tetapi kami dapat memastikan bahwa kami tidak akan secara tidak sengaja memperkenalkan kembali bug ini,
+* --- karena hanya menjalankan tes akan segera memperingatkan kita.
+* --- Kita dapat mempertimbangkan bagian kecil dari aplikasi ini yang disimpan dengan aman selamanya.
+
+More comprehensive tests
+-kita sudah sampai sini, kita dapat further pin down method was_published_recently();
+-dalam fakta, itu menjadi positif embarrassing jika didalam fixing/pembetulan satu bug
+*-kita akan memperkenalkan/dikenalkan bug yang lain-nya.
+-tambahkan dua lagi test method ke class yang sama, untuk test the behavior of the method comprehensively:
+*--- def test_was_published_recently_with_old_question(self):
+*---     """
+*---     was_published_recently() returns False for questions whose pub_date
+*---     is older than 1 day.
+*---     """
+*---     time = timezone.now() - datetime.timedelta(days=1, seconds=1)
+*---     old_question = Question(pub_date=time)
+*---     self.assertIs(old_question.was_published_recently(), False)
+*--- def test_was_published_recently_with_recent_question(self):
+*---     """
+*---     was_published_recently() returns True for questions whose pub_date
+*---     is within the last day.
+*---     """
+*---     time = timezone.now() - datetime.timedelta(hours=23, minutes=59, seconds=59)
+*---     recent_question = Question(pub_date=time)
+*---     self.assertIs(recent_question.was_published_recently(), True)
+-dan sekarang kita mempunyai tiga tests yang meng-konfirm/merujuk pada 
+*-Question.was_published_recently() untuk memantau kembalian nilai-nya untuk Questoin dari:
+*-- masa sebelum-nya(past),
+*-- masa sekarang(recent),
+*-- dan masa depan(future)
+-lagi-lagi, polls_app adalah sebuah aplikasi simple, tetapi bagamanapun akan complex juga tumbuh pada masa depan
+*-dan code lain apapun itu akan berinteraksi bersama-nya,
+*-kita sekarang memiliki beberapa garansi method itu, kita sudah menulis tests akan bertugas sesuai jalurnya(dan saling mem-backup).
+-pada dasarnya comprehensive tests adalah dukungan sebuah tests ke tests yang lain.
+
+test a view/test sebuah view
+-Aplikasi polls_app cukup tidak diskriminatif: aplikasi itu akan menerbitkan pertanyaan apa pun, 
+*--termasuk pertanyaan yang bidang pub_date-nya ada di masa depan. Kita harus memperbaikinya. 
+*--Menetapkan pub_date di masa mendatang harus berarti bahwa Pertanyaan diterbitkan pada saat itu, 
+*--tetapi tidak terlihat sampai saat itu.
+
+sebuah test untuk sebuah view
+-Ketika kami memperbaiki bug di atas, kami menulis tes pertama dan kemudian kode untuk memperbaikinya. 
+*--Sebenarnya itu adalah contoh sederhana dari pengembangan yang digerakkan oleh pengujian, 
+*--tetapi tidak terlalu penting dalam urutan mana kami melakukan pekerjaan.
+-Dalam pengujian pertama kami, kami memusatkan perhatian pada perilaku internal kode. 
+*--Untuk pengujian ini, kami ingin memeriksa perilakunya karena akan dialami oleh pengguna melalui browser web.
+-Sebelum kami mencoba memperbaiki apa pun, mari kita lihat alat yang kami miliki
+
+the Django test client
+-Django menyediakan tes Klien untuk mensimulasikan pengguna yang berinteraksi dengan kode pada tingkat tampilan. 
+*--Kita bisa menggunakannya di tests.py atau bahkan di shell.
+-Kami akan mulai lagi dengan shell, di mana kami perlu melakukan beberapa hal yang tidak perlu dilakukan di tests.py. 
+*--Yang pertama adalah mengatur lingkungan pengujian di shell:
+*----- python manage.py shell
+*--kita masukan ini pada shell:
+*----- from django.test.utils import setup_test_environment
+*----- setup_test_environment()
+-setup_test_environment() memasang renderer templat yang akan memungkinkan kami memeriksa beberapa 
+*--atribut tambahan pada respons seperti response.context yang tidak tersedia. 
+-Perhatikan bahwa method ini tidak menyiapkan database pengujian, 
+*--jadi yang berikut akan dijalankan terhadap database yang ada dan hasilnya mungkin sedikit berbeda 
+*--tergantung pada pertanyaan apa yang sudah Anda buat. 
+-Anda mungkin mendapatkan hasil yang tidak terduga jika TIME_ZONE Anda di settings.py tidak benar. 
+*--Jika Anda tidak ingat menyetelnya lebih awal, periksa sebelum melanjutkan.
+-Selanjutnya kita perlu mengimpor kelas klien uji (nanti dalam tests.py kita akan menggunakan kelas django.test.TestCase, 
+*--yang dilengkapi dengan klien sendiri, jadi ini tidak diperlukan):
+*----- >>> from django.test import Client
+*----- >>> # create an instance of the client for our use
+*----- >>> client = Client()
+-Dengan siap itu, kita dapat meminta klien untuk melakukan beberapa pekerjaan untuk kita:
+*----- >>> # get a response from '/'
+*----- >>> response = client.get('/')
+*----- Not Found: /
+*----- >>> # we should expect a 404 from that address; if you instead see an
+*----- >>> # "Invalid HTTP_HOST header" error and a 400 response, you probably
+*----- >>> # omitted the setup_test_environment() call described earlier.
+*----- >>> response.status_code
+*----- 404
+*----- >>> # on the other hand we should expect to find something at '/polls/'
+*----- >>> # we'll use 'reverse()' rather than a hardcoded URL
+*----- >>> from django.urls import reverse
+*----- >>> response = client.get(reverse('polls:index'))
+*----- >>> response.status_code
+*----- 200
+*----- >>> response.content
+*----- b'\n    <ul>\n    \n        <li><a href="/polls/1/">What&#39;s up?</a></li>\n    \n    </ul>\n\n'
+*----- >>> response.context['latest_question_list']
+*----- <QuerySet [<Question: What's up?>]>
+
+Improveving view kita
+-list dari polls_app menunjukan polls_app yang belum diterbitkan, belum(mereka itu memiliki pub_date dari masa depan).
+-di dalam tutorial 4 kita diperkenalkan sebuah class-berdasarkan view, berdasarkan dari ListView(ekstend dari ListView):
+*--- class IndexView(generic.ListView):
+*---     template_name = 'polls/index.html'
+*---     context_object_name = 'latest_question_list'
+*---     def get_queryset(self):
+*---         """Return the last five published questions."""
+*---         return Question.objects.order_by('-pub_date')[:5]
+-kita perlu mengubah method get_queryset() dan menggantinya jadi itu juga mengecek date dengan membandingkan-nya dengan timezone.now()
+-pertama kita perlu menambahkan sebuah import:
+*--- from django.utils import timezone
+-setelah itu kita harus mengubah method get_queryset() seperti ini:
+*--- def get_queryset(self):
+*---     """
+*---     Return the last five published questions (not including those set to be
+*---     published in the future).
+*---     """
+*---     return Question.objects.filter(
+*---	     #pub_date__lte - lte artinya less than or equal(kurang dari atau sama dengan)
+*---         pub_date__lte=timezone.now()
+*---     ).order_by('-pub_date')[:5]
+-Question.objects.filter(pub_date__lte=timezone.now()) mengembalikan sebuah queryset mengandung Question
+*---yang pub_date nya itu kurang dari atau sama dengan(lebih awal atau sama dengan) timezone.now()
+
+tesnting view baru kita
+-sekarang kamu bisa memuaskan dirimu sendiri bahwa ini berperilaku seperti yang diharapkan dengan menjalankan runserver,
+*--loading site nya oada browser, buat Questions dengan date(tanggal) dari masalalu dan masadepan, dan coba cek itu hanya
+*--yang sudah diterbitkan tercantum.
+-Anda tidak ingin harus melakukan itu setiap kali Anda melakukan perubahan yang dapat memengaruhi ini 
+*-- - jadi mari kita juga membuat tes, berdasarkan pada sesi shell kita di atas.
+-tambahkan ini pada polls_app/test.py:
+*---- from django.urls import reverse
+-dan kita semua membuat sebuah shortcut(jalanpintas) function untuk membuat questions demikian juga sebagai class test baru:
+*---- def create_question(question_text, days):
+*----     """
+*----     Create a question with the given `question_text` and published the
+*----     given number of `days` offset to now (negative for questions published
+*----     in the past, positive for questions that have yet to be published).
+*----     """
+*----     time = timezone.now() + datetime.timedelta(days=days)
+*----     return Question.objects.create(question_text=question_text, pub_date=time)
+*---- class QuestionIndexViewTests(TestCase):
+*----     def test_no_questions(self):
+*----         """
+*----         If no questions exist, an appropriate message is displayed.
+*----         """
+*----         response = self.client.get(reverse('polls:index'))
+*----         self.assertEqual(response.status_code, 200)
+*----         self.assertContains(response, "No polls are available.")
+*----         self.assertQuerysetEqual(response.context['latest_question_list'], [])
+*----     def test_past_question(self):
+*----         """
+*----         Questions with a pub_date in the past are displayed on the
+*----         index page.
+*----         """
+*----         create_question(question_text="Past question.", days=-30)
+*----         response = self.client.get(reverse('polls:index'))
+*----         self.assertQuerysetEqual(
+*----             response.context['latest_question_list'],
+*----             ['<Question: Past question.>']
+*----         )
+*----     def test_future_question(self):
+*----         """
+*----         Questions with a pub_date in the future aren't displayed on
+*----         the index page.
+*----         """
+*----         create_question(question_text="Future question.", days=30)
+*----         response = self.client.get(reverse('polls:index'))
+*----         self.assertContains(response, "No polls are available.")
+*----         self.assertQuerysetEqual(response.context['latest_question_list'], [])
+*----     def test_future_question_and_past_question(self):
+*----         """
+*----         Even if both past and future questions exist, only past questions
+*----         are displayed.
+*----         """
+*----         create_question(question_text="Past question.", days=-30)
+*----         create_question(question_text="Future question.", days=30)
+*----         response = self.client.get(reverse('polls:index'))
+*----         self.assertQuerysetEqual(
+*----             response.context['latest_question_list'],
+*----             ['<Question: Past question.>']
+*----         )
+*----     def test_two_past_questions(self):
+*----         """
+*----         The questions index page may display multiple questions.
+*----         """
+*----         create_question(question_text="Past question 1.", days=-30)
+*----         create_question(question_text="Past question 2.", days=-5)
+*----         response = self.client.get(reverse('polls:index'))
+*----         self.assertQuerysetEqual(
+*----             response.context['latest_question_list'],
+*----             ['<Question: Past question 2.>', '<Question: Past question 1.>']
+*----         )
+-Mari kita lihat beberapa di antaranya lebih dekat.
+-pertama adalah sebuah quesetion shortcut function create_question(), untuk mengambil beberapa pengulangan dari proses membuat pertanyaan.
+-test_no_questions tidak membuat beberapa quesitons, tetapi mengecek message: "No polls_app are available."
+*-- dan memverifikasi ketika lates_question_list itu kosong. 
+*-- perhatikan class django.test.TestCase menyediakan beberapa method pertanyaan/assertion tambahan(assert methods).
+*-- di contoh ini, kita menggunakan assertContains() dan assertQuerysetEqual().
+-didalam test_past_question, kita membuat sebuah question dan verifikasi bahwa itu muncul dalam daftar.
+-didalam test_future_question, kita membuat sebuah quesetion dengan sebuah pub_date dari masa depan.
+*-- database diatur ulang setiap method pengujian/test, jadi pertanyaan pertama sudah tidak ada lagi, 
+*-- dan lagi-lagi indeks tidak boleh memiliki pertanyaan di dalamnya.
+-Dan seterusnya. Akibatnya, kami menggunakan tes untuk menceritakan kisah input admin dan 
+*-- pengalaman pengguna di situs, dan memeriksa bahwa di setiap negara bagian dan 
+*-- untuk setiap perubahan baru dalam kondisi sistem, hasil yang diharapkan dipublikasikan.
+
+testing DetailView
+-Apa yang kita miliki berfungsi dengan baik; namun, meskipun pertanyaan di masa mendatang tidak muncul dalam indeks, 
+*-pengguna masih dapat menjangkau mereka jika mereka tahu atau menebak URL yang tepat(mengetahui id dari question). 
+*-Jadi kita perlu menambahkan batasan serupa ke DetailView:
+*---- class DetailView(generic.DetailView):
+*----     ...
+*----     def get_queryset(self):
+*----         """
+*----         Excludes any questions that aren't published yet.
+*----         """
+*----         return Question.objects.filter(pub_date__lte=timezone.now())
+-Dan tentu saja, kami akan menambahkan beberapa tes, 
+*--untuk memeriksa apakah Question yang pub_date di masa lalu dapat ditampilkan, 
+*--dan yang memiliki pub_date di masa mendatang(future) tidak:
+*----- class QuestionDetailViewTests(TestCase):
+*-----     def test_future_question(self):
+*-----         """
+*-----         The detail view of a question with a pub_date in the future
+*-----         returns a 404 not found.
+*-----         """
+*-----         future_question = create_question(question_text='Future question.', days=5)
+*-----         url = reverse('polls:detail', args=(future_question.id,))
+*-----         response = self.client.get(url)
+*-----         self.assertEqual(response.status_code, 404)
+*-----     def test_past_question(self):
+*-----         """
+*-----         The detail view of a question with a pub_date in the past
+*-----         displays the question's text.
+*-----         """
+*-----         past_question = create_question(question_text='Past Question.', days=-5)
+*-----         url = reverse('polls:detail', args=(past_question.id,))
+*-----         response = self.client.get(url)
+*-----         self.assertContains(response, past_question.question_text)
+
+Gagasan untuk tes lebih lanjut
+-Kita harus menambahkan metode get_queryset yang serupa ke ResultsView 
+*--dan membuat kelas tes baru untuk tampilan itu. Ini akan sangat mirip dengan apa yang baru saja kita buat; 
+*--sebenarnya akan ada banyak pengulangan.
+-Kami juga dapat meningkatkan aplikasi kami dengan cara lain, menambahkan tes di sepanjang jalan. 
+*--Misalnya, konyol jika Pertanyaan dapat dipublikasikan di situs yang tidak memiliki Pilihan. 
+*--Jadi, pandangan kami dapat memeriksa ini, dan mengecualikan Pertanyaan tersebut. 
+*--Tes kami akan membuat Pertanyaan tanpa Pilihan dan kemudian menguji apakah itu tidak dipublikasikan, 
+*--serta membuat Pertanyaan serupa dengan Pilihan, dan menguji apakah itu diterbitkan.
+-Mungkin pengguna admin yang masuk harus diizinkan untuk melihat Pertanyaan yang tidak dipublikasikan, 
+*--tetapi bukan pengunjung biasa. Sekali lagi: apa pun yang perlu ditambahkan ke perangkat lunak untuk mencapai ini 
+*--harus disertai dengan tes, apakah Anda menulis tes terlebih dahulu dan kemudian membuat kode lulus tes, 
+*--atau mengerjakan logika di kode Anda terlebih dahulu dan kemudian menulis tes untuk buktikan itu.
+-Pada titik tertentu Anda terikat untuk melihat tes Anda dan bertanya-tanya apakah kode Anda menderita test mengasapi, 
+*--yang membawa kita ke:
+
+Saat menguji, lebih banyak lebih baik/when testing, more is better
+-ini mungkin terasa seperti tests kita tumbuh keluar dari kontrol.
+*--Pada tingkat ini akan segera ada lebih banyak kode dalam pengujian kami daripada dalam aplikasi kami, 
+*--dan pengulangan tidak estetika, dibandingkan dengan keringkasan elegan dari sisa kode kami.
+-Itu tidak masalah. Biarkan mereka tumbuh. Untuk sebagian besar, Anda dapat menulis tes sekali dan kemudian melupakannya. 
+*--Ini akan terus melakukan fungsinya yang bermanfaat saat Anda terus mengembangkan program Anda.
+-Terkadang tes perlu diperbarui. Misalkan kita mengubah pandangan kita sehingga hanya Pertanyaan dengan Pilihan yang dipublikasikan. 
+*--Dalam hal itu, banyak dari tes kami yang ada akan gagal - memberi tahu kami dengan tepat tes mana yang perlu diubah 
+*--agar mutakhir, sehingga sejauh itu tes membantu menjaga diri mereka sendiri.
+-Paling buruk, ketika Anda terus berkembang, Anda mungkin menemukan bahwa Anda memiliki beberapa tes yang sekarang berlebihan. 
+*--Bahkan itu bukan masalah; dalam menguji redundansi adalah hal yang baik.
+-Selama tes Anda diatur dengan bijaksana, mereka tidak akan menjadi tidak terkendali. 
+*--Aturan praktis yang baik termasuk memiliki:
+**---TestClass terpisah untuk setiap model atau tampilan
+**---metode pengujian terpisah untuk setiap rangkaian kondisi yang ingin Anda uji
+**---nama metode uji yang menggambarkan fungsinya
+
+Pengujian lebih lanjut/Futher testing
+-tutorial ini hanya memperkenalkan beberapa dari basic testing. Ada banyak lagi yang dapat Anda lakukan, 
+*--dan sejumlah alat yang sangat berguna yang Anda inginkan untuk mencapai beberapa hal yang sangat pintar.
+-Misalnya, sementara pengujian kami di sini telah mencakup beberapa logika internal model dan 
+*--cara pandangan kami mempublikasikan informasi, Anda dapat menggunakan kerangka kerja "di-peramban" 
+*--seperti Selenium untuk menguji cara HTML Anda benar-benar merender dalam browser. 
+*--Alat-alat ini memungkinkan Anda untuk memeriksa tidak hanya perilaku kode Django Anda, tetapi juga: 
+*--misalnya, dari JavaScript Anda. Ini sesuatu yang cukup untuk melihat tes meluncurkan browser, 
+*--dan mulai berinteraksi dengan situs Anda, seolah-olah manusia yang mengendarainya! 
+*--Django menyertakan LiveServerTestCase untuk memfasilitasi integrasi dengan alat-alat seperti Selenium.
+*--selenium site: https://www.seleniumhq.org/
+-Jika Anda memiliki aplikasi yang kompleks, Anda mungkin ingin menjalankan tes secara otomatis dengan setiap komit 
+*--untuk tujuan integrasi berkelanjutan, sehingga kontrol kualitas itu sendiri - setidaknya sebagian - otomatis.
+-Cara yang baik untuk menemukan bagian-bagian aplikasi Anda yang belum diuji adalah dengan memeriksa cakupan kode. 
+*--Ini juga membantu mengidentifikasi kode rapuh atau bahkan mati. Jika Anda tidak dapat menguji sepotong kode, 
+*--biasanya itu berarti kode tersebut harus di refactored atau dihapus. Cakupan akan membantu mengidentifikasi kode mati. 
+*--Lihat Integrasi dengan coverage.py untuk detailnya.
+-Testing in Django has comprehensive information about testing.

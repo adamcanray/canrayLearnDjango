@@ -1,0 +1,215 @@
+Tutorial lanjutan: Cara menulis aplikasi yang dapat digunakan kembali¶
+-Tutorial lanjutan ini dimulai ketika Tutorial 7 tidak digunakan. Kami akan mengubah jajak pendapat Web kami 
+*--menjadi paket Python mandiri yang dapat Anda gunakan kembali dalam proyek baru dan berbagi dengan orang lain.
+-Jika Anda belum menyelesaikan Tutorial 1–7 baru-baru ini, kami menganjurkan Anda untuk meninjau ini 
+*--sehingga proyek contoh Anda cocok dengan yang dijelaskan di bawah ini.
+
+Reausability matters/hal-hal yang dapat digunakan kambali
+-Banyak pekerjaan untuk merancang, membangun, menguji, dan memelihara aplikasi web. 
+*--Banyak proyek Python dan Django berbagi masalah umum. 
+*--Bukankah lebih bagus jika kita bisa menyelamatkan beberapa pekerjaan yang berulang ini?
+-Dapat digunakan kembali adalah cara hidup dalam Python. Python paket index(PyPI) memiliki beragam paket
+*--yang dapat Anda gunakan dalam program Python Anda sendiri. Lihat Django Package untuk aplikasi yang dapat digunakan kembali 
+*--yang ada yang dapat Anda sertakan dalam proyek Anda. Django sendiri juga hanya paket Python. 
+*--Ini berarti bahwa Anda dapat mengambil paket Python atau aplikasi Django yang ada dan menyusunnya ke dalam proyek web Anda sendiri. 
+*--Anda hanya perlu menulis bagian-bagian yang membuat proyek Anda unik.
+-Katakanlah Anda memulai proyek baru yang membutuhkan aplikasi polling seperti yang sedang kami kerjakan. 
+*--Bagaimana Anda membuat aplikasi ini dapat digunakan kembali? Untungnya, Anda sudah dalam perjalanan. 
+*--Dalam Tutorial 1, kami melihat bagaimana kami dapat memisahkan polling dari URL tingkat proyek dengan menggunakan include. 
+*--Dalam tutorial ini, kami akan mengambil langkah lebih lanjut untuk membuat aplikasi mudah digunakan dalam \
+*--proyek-proyek baru dan siap untuk dipublikasikan agar orang lain dapat menginstal dan menggunakan.
+
+Package/paket?App/aplikasi?
+-sebuah Python packages menyediakan sebuah cara untuk mengelompokan python code yang terkait agar mudah di reuse/gunakan kembali.
+*--sebuah Package mengandung satu atau lebih files dari Python code(juga dikenal sebagai "modules").
+-sebuah Package bisa diimport dengan import foo.bar atau from foo import bar. untuk sebuah direktori(seperti polls)
+*--untuk membentuk sebuah paket, itu harus berisi file khusus __init__.py, bahkan jika file ini kosong.
+-sebuah Django application adalah hanya sebuah Python package yang secara khusus dimaksudkan untuk digunakan dalam proyek Django. 
+*--application dapat menggunakan konvensi Django umum, seperti memiliki model, tes, url, dan melihat submodules.
+-Kemudian kami menggunakan istilah pengemasan untuk menjelaskan proses pembuatan package Python yang 
+*--mudah dipasang oleh orang lain. Ini bisa sedikit membingungkan, kita tahu.
+
+Your project and your reusable app/Proyek Anda dan aplikasi yang dapat digunakan kembali
+-After the previous tutorials, our project should look like this:/Setelah tutorial sebelumnya, proyek kami akan terlihat seperti ini:
+*--- mysite/
+*---     manage.py
+*---     mysite/
+*---         __init__.py
+*---         settings.py
+*---         urls.py
+*---         wsgi.py
+*---     polls/
+*---         __init__.py
+*---         admin.py
+*---         migrations/
+*---             __init__.py
+*---             0001_initial.py
+*---         models.py
+*---         static/
+*---             polls/
+*---                 images/
+*---                     background.gif
+*---                 style.css
+*---         templates/
+*---             polls/
+*---                 detail.html
+*---                 index.html
+*---                 results.html
+*---         tests.py
+*---         urls.py
+*---         views.py
+*---     templates/
+*---         admin/
+*---             base_site.html
+-kamu membuat mywebsite/templates di tutorial 7, dan polls/templates di tutorial 3. 
+-Sekarang mungkin lebih jelas mengapa kami memilih untuk memiliki direktori templat terpisah 
+*--untuk project dan application: semua yang merupakan bagian dari aplikasi polls ada di polls. 
+*--Itu membuat aplikasi mandiri dan lebih mudah untuk jatuh ke proyek baru.
+-Direktori polls sekarang dapat disalin ke proyek Django baru dan segera digunakan kembali. 
+*--Ini belum cukup siap untuk diterbitkan. Untuk itu, kita perlu mengemas aplikasi untuk memudahkan orang lain untuk menginstal.
+
+Installing beberapa prerequisites/install beberapa prerequisit
+-Keadaan saat ini dari pengemasan Python agak kacau dengan berbagai alat. Untuk tutorial ini, 
+*--kami akan menggunakan setuptools untuk membangun pakage kita.
+*--Ini adalah alat pengemasan yang direkomendasikan(digabung dengan garpu distribusi/merged with the distribute fork). 
+*--Kami juga akan menggunakan pip untuk menginstal dan mencopotnya. Anda harus menginstal dua paket ini sekarang(setuptools dan pip).
+*--Jika Anda butuh bantuan, Anda bisa merujuk ke cara menginstal Django dengan pip. 
+*--Anda dapat menginstal setuptools dengan cara yang sama.
+
+packaging your app/paketkan applikasi kamu
+-Packaging Python mengacu pada menyiapkan aplikasi Anda dalam format tertentu yang dapat dengan mudah dipasang dan digunakan. 
+*-Django sendiri dikemas sangat mirip dengan ini. Untuk aplikasi kecil seperti polls, proses ini tidak terlalu sulit.
+-1. pertama, buat parent direktori untku polls, diluar Django project kamu. namai direktori ini django-polls.
+*-- Choosing a name for your app/pilih sebuah nama untuk aplikasi kamu
+*---- ketika memilih sebuah nama untuk pakage anda, periksa sumber daya seperti PyPI untuk menghindari penamaan konflik dengan paket yang ada. 
+*------ Seringkali berguna untuk menambahkan django- ke nama modul Anda saat membuat paket untuk didistribusikan. 
+*------ Ini membantu orang lain mencari aplikasi Django mengidentifikasi aplikasi Anda sebagai Django spesifik.
+*---- Label aplikasi (yaitu, bagian akhir dari jalur putus-putus ke paket aplikasi) harus unik di INSTALLED_APPS. 
+*------ Hindari menggunakan label yang sama dengan salah satu contrib packages Django, misalnya auth, admin, atau messages.
+-2. pindahkan/copy direktori polls_app ke direktori django-polls.
+-3. buat sebuah file django-polls-README.rst dengan konten seperti dibawah:
+*--- =====
+*--- Polls
+*--- =====
+*--- 
+*--- Polls is a simple Django app to conduct Web-based polls. For each
+*--- question, visitors can choose between a fixed number of answers.
+*--- 
+*--- Detailed documentation is in the "docs" directory.
+*--- 
+*--- Quick start
+*--- -----------
+*--- 
+*--- 1. Add "polls" to your INSTALLED_APPS setting like this::
+*--- 
+*---     INSTALLED_APPS = [
+*---         ...
+*---         'polls',
+*---     ]
+*--- 
+*--- 2. Include the polls URLconf in your project urls.py like this::
+*--- 
+*---     path('polls/', include('polls.urls')),
+*--- 
+*--- 3. Run `python manage.py migrate` to create the polls models.
+*--- 
+*--- 4. Start the development server and visit http://127.0.0.1:8000/admin/
+*---    to create a poll (you'll need the Admin app enabled).
+*--- 
+*--- 5. Visit http://127.0.0.1:8000/polls/ to participate in the poll.
+-4. Buat file django-polls/LISENSI. 
+*--- Memilih lisensi di luar cakupan tutorial ini, tetapi cukup untuk mengatakan bahwa kode yang dirilis untuk publik tanpa lisensi tidak ada gunanya. 
+*--- Django dan banyak aplikasi yang kompatibel dengan Django didistribusikan di bawah lisensi BSD; 
+*--- namun, Anda bebas memilih lisensi sendiri. Perlu diketahui bahwa pilihan lisensi Anda akan memengaruhi siapa yang dapat menggunakan kode Anda.
+-5. Selanjutnya kita akan membuat file setup.py 
+*--- yang memberikan detail tentang cara membangun dan menginstal aplikasi. 
+*--- Penjelasan lengkap dari file ini berada di luar cakupan tutorial ini, 
+*--- tetapi dokumen setuptools memiliki penjelasan yang baik. Buat file django-polls/setup.py dengan konten berikut:
+*----- import os
+*----- from setuptools import find_packages, setup
+*----- 
+*----- with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
+*-----     README = readme.read()
+*----- 
+*----- # allow setup.py to be run from any path
+*----- os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
+*----- 
+*----- setup(
+*-----     name='django-polls',
+*-----     version='0.1',
+*-----     packages=find_packages(),
+*-----     include_package_data=True,
+*-----     license='BSD License',  # example license
+*-----     description='A simple Django app to conduct Web-based polls.',
+*-----     long_description=README,
+*-----     url='https://www.example.com/',
+*-----     author='Your Name',
+*-----     author_email='yourname@example.com',
+*-----     classifiers=[
+*-----         'Environment :: Web Environment',
+*-----         'Framework :: Django',
+*-----         'Framework :: Django :: X.Y',  # replace "X.Y" as appropriate
+*-----         'Intended Audience :: Developers',/
+*-----         'License :: OSI Approved :: BSD License',  # example license
+*-----         'Operating System :: OS Independent',
+*-----         'Programming Language :: Python',
+*-----         'Programming Language :: Python :: 3.5',
+*-----         'Programming Language :: Python :: 3.6',
+*-----         'Topic :: Internet :: WWW/HTTP',
+*-----         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+*-----     ],
+*----- )
+-6. Hanya modules dan pakages Python yang disertakan dalam pakages secara default.
+*--- Untuk memasukkan file tambahan, kita harus membuat file MANIFEST.in. 
+*--- Dokumen setuptools yang disebutkan pada langkah sebelumnya membahas file ini secara lebih rinci. 
+*--- Untuk menyertakan templat, README.rst dan file LICENSE kita, buat file django-polls/MANIFEST.in dengan konten berikut:
+*------ include LICENSE
+*------ include README.rst
+*------ recursive-include polls/static *
+*------ recursive-include polls/templates * 
+-7. Ini opsional, tetapi disarankan, 
+*---- untuk memasukkan dokumentasi terperinci dengan aplikasi Anda. 
+*---- Buat direktori kosong django-polls/docs untuk dokumentasi di masa depan. 
+*---- Tambahkan baris tambahan ke polling django/MANIFEST.in:
+*------------ recursive-include docs *
+*---- Perhatikan bahwa direktori docs tidak akan disertakan dalam paket Anda 
+*---- kecuali Anda menambahkan beberapa file ke dalamnya. 
+*---- Banyak aplikasi Django juga menyediakan dokumentasi mereka secara online melalui situs-situs seperti readthedocs.org.
+-8. mencoba pakages anda dengan: python setup.py sdist (jalankan dari dalam django-polls).
+*---- ini membuat sebuah direktor dengan nama dist dan membangun packages baru anda, django-polls-o.1.tar.gz.
+untuk informasi lebih tentang Packaging, lihat Python's Tutorial on Packaging and Distributing Projects.
+
+Using your own package/menggunakan package anda sendiri
+-karena/sejak kami memindahkan direktori polls_app dari project, itu tidak lagi berfungsi. 
+*--Kami sekarang akan memperbaikinya dengan menginstal paket polls baru kami.
+*----- Installing as a user library/install sebagai pengguna library
+*----- Langkah-langkah berikut menginstal polls sebagai library pengguna. 
+*----- Pemasangan per pengguna memiliki banyak keunggulan dibandingkan menginstal seluruh paket sistem, 
+*----- seperti dapat digunakan pada sistem di mana Anda tidak memiliki akses administrator serta mencegah 
+*----- paket dari memengaruhi layanan sistem dan pengguna mesin lainnya.
+*----- Perhatikan bahwa instalasi per pengguna masih dapat mempengaruhi perilaku alat sistem yang berjalan 
+*----- sebagai pengguna itu, jadi virtualenv adalah solusi yang lebih kuat (lihat di bawah).
+-1. untuk intstall Package, gunakan pip(kamu sudah install ini, benarkan?)
+*-------- pip install --user django-polls/dist/django-polls-0.1.tar.gz
+*-- atau: pip install --user ../django-polls/dist/django-polls-0.1.tar.gz
+-2. Jika beruntung, proyek Django Anda sekarang seharusnya bekerja dengan benar lagi. Jalankan server lagi untuk mengonfirmasi ini.
+-3. untuk uninstall package, gunakan pip:
+*------- pip unninstall django-polls
+
+Publishing your app/publikasikan aplikasi anda
+-Sekarang kami telah packaged dan menguji polls_app, siap untuk dibagikan kepada dunia! 
+*-Jika ini bukan hanya contoh, Anda sekarang dapat:
+*-- Kirim paket melalui email ke teman.
+*-- Unggah paket di situs web Anda.
+*-- Posting paket pada repositori publik, seperti Python Package Index (PyPI). 
+*---- packaging.python.org memiliki tutorial yang bagus untuk melakukan ini.
+ps: COBA BELAJAR UNTUK PUBLISH PACKAGE KITA
+
+Installing Pyhon packages with virtualenv
+-Sebelumnya, kami memasang aplikasi polling sebagai library pengguna. Ini memiliki beberapa kelemahan:
+*-------- Memodifikasi library pengguna dapat memengaruhi perangkat lunak Python lain di sistem Anda.
+*-------- Anda tidak akan dapat menjalankan beberapa versi dari paket ini (atau yang lain dengan nama yang sama).
+- Biasanya, situasi ini hanya muncul setelah Anda mempertahankan beberapa proyek Django. 
+*-- Ketika mereka melakukannya, solusi terbaik adalah menggunakan virtualenv. 
+*-- Alat ini memungkinkan Anda untuk mempertahankan beberapa lingkungan Python terisolasi, 
+*-- masing-masing dengan salinan perpustakaan dan namespace paket sendiri.

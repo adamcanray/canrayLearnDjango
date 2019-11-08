@@ -1,0 +1,187 @@
+source: https://docs.djangoproject.com/en/2.2/intro/tutorial04/
+
+pertama:
+menulis sebuah form simple:
+-mari kita perbarui template detail kita ("polls_app/detail.html") dari tutorial terakhir, 
+-jadi template detail mengandung tag HTML <form>:
+*--- <h1>{{ question.question_text }}</h1>
+*--- {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+*--- <form action="{% url 'polls:vote' question.id %}" method="post">
+*--- {% csrf_token %}
+*--- {% for choice in question.choice_set.all %}
+*---     <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}">
+*---     <label for="choice{{ forloop.counter }}">{{ choice.choice_text }}</label><br>
+*--- {% endfor %}
+*--- <input type="submit" value="Vote">
+*--- </form>
+Quick Rundown:
+*-template diatas menampilkan perulangan radio button sebanyan question choice. value dari setiap perulangan radio buttonnya itu diambil dari question choice ID.
+--name dalam radio button di foreach adalah "choice". itu artinya, ketika seseorang men-select salah satu dari radio button
+--dan dia submit form nya, itu akan mengirim data choice=# dimana # adalah ID dari choice yang terseleksi. ini basic FORM di HTML.
+*-kita SET form action seperti ini {% url 'polls_app:vote' question.id %} dan kita SET method=post. menggunakan method=post(sebagai lawan dari method=get)
+--ini sangat oenting, karena aksi yang dilakukan setelah menekan tombol submit itu akan mengubah pada server-side.
+--kapanpun kamu membuat sebuah form yang mengubah server-side, gunakan method="post". ini bukan tips sjango, melainkan hanya tips web deleopment yang baik.
+*-forloop.counter mengindikasikan berapa banyak tag for telah melewati loop-nya.
+*-Karena kami membuat formulir POST (yang dapat memiliki efek memodifikasi data), kami perlu khawatir tentang Pemalsuan Permintaan Situs Lintas. 
+--Untungnya, Anda tidak perlu khawatir terlalu keras, karena Django hadir dengan sistem yang sangat mudah digunakan untuk melindunginya. 
+--Singkatnya, semua formulir POST yang ditargetkan pada URL internal harus menggunakan tag templat {% csrf_token%}.
+
+kedua:
+-kalo kita ingat kita membuat view yang menghandle data yang disubmit kan dan melakukan sesuatu untuk ini.
+di tutorial sebelumnya kita berhasil membuat ini pada polls_app/urls.py:
+*--- path('<int:question_id>/vote/', views.vote, name='vote'),
+-Kita juga membuat implementasi dummy dari fungsi votes() pada views. 
+-Mari kita buat versi nyata. Tambahkan yang berikut ke polls_app/views.py:
+*--- from django.http import HttpResponse, HttpResponseRedirect
+*--- from django.shortcuts import get_object_or_404, render
+*--- from django.urls import reverse
+*--- from .models import Choice, Question
+*--- # ...
+*--- def vote(request, question_id):
+*---     question = get_object_or_404(Question, pk=question_id)
+*---     try:
+*---         selected_choice = question.choice_set.get(pk=request.POST['choice'])
+*---     except (KeyError, Choice.DoesNotExist):
+*---         # Redisplay the question voting form.
+*---         return render(request, 'polls/detail.html', {
+*---             'question': question,
+*---             'error_message': "You didn't select a choice.",
+*---         })
+*---     else:
+*---         selected_choice.votes += 1
+*---         selected_choice.save()
+*---         # Always return an HttpResponseRedirect after successfully dealing
+*---         # with POST data. This prevents data from being posted twice if a
+*---         # user hits the Back button.
+*---         return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))
+-Kode ini mencakup beberapa hal yang belum kita bahas dalam tutorial ini:
+*-- request.POST adalah sebuah dictionary seperti object yang bisa kita akses data yang telah di submit menggunakan key name.
+--- dalam kasus ini, request.POST['choice'] mengembalikan nilai ID dari selected choice, sebagai sebuah string.
+--- isi dari request.POST selalu string.
+--- note: django juga menyediakan request.GET untuk mengakses GET data denga cara yang sama - tetapi kami secara eksplisit menggunakan request.POST dalam kode kami,
+--- untuk memastikan bahwa data hanya diubah melalui panggilan POST.
+*-- request.POST['choice'] akan raise KeyError jika choice tidak disediakan dalam POST data. code diatas mengecek KeyError
+--- dan menampilkan ulang form question dengan error message jika choice pada form tidak diisi.
+*-- setelah menambahkan jumlah choice count, code me-return HttpResponseRedierect dari pada HttpResponse.
+--- HttpResponseRedierect membutuhkan sebuah argument: URL tujuan untuk mengalihkan pengguna kesana(lihat comentar pada code untk bagaimana kita membangun URL dalam kasus ini)
+*-- Kami menggunakan fungsi reverse() dalam konstruktor HttpResponseRedirect dalam contoh ini. 
+--- Fungsi ini membantu menghindari pengerasan kode URL dalam fungsi tampilan. 
+--- Diberi nama tampilan yang ingin kami sampaikan kontrol dan bagian variabel dari pola URL yang menunjuk ke tampilan itu. 
+--- Dalam hal ini, menggunakan URLconf yang kami atur di Tutorial 3, panggilan balik ini akan mengembalikan string seperti:
+-------- '/polls/3/results/'
+---- dimana 3 adalah nilai dari question.id. URL yang dialihkan ini kemudian akan memanggil tampilan 'results' 
+---- untuk menampilkan halaman terakhir.
+---- Seperti yang disebutkan dalam Tutorial 3, request adalah objek HttpRequest. 
+---- Untuk lebih lanjut tentang objek HttpRequest, lihat dokumentasi request dan response.
+
+ketiga:
+-setelah seseorang melakukan votes pada form question, fungsi vote() di views akan me-redirect ke halaman result question.
+-ayo kita coba tulis view nya, polls_app/views.py:
+*--- from django.shortcuts import get_object_or_404, render
+*--- def results(request, question_id):
+*---     question = get_object_or_404(Question, pk=question_id)
+*---     return render(request, 'polls/results.html', {'question': question})
+-ini hampir sama dengan view detail(), bedanya hanya pada template name, kita akan perbaiki redudansi ini nanti.
+sekarang, buat sebuah tamplate polls_app/results.html:
+*--- <h1>{{ question.question_text }}</h1>
+*--- <ul>
+*--- {% for choice in question.choice_set.all %}
+*---     <li>{{ choice.choice_text }} -- {{ choice.votes }} vote{{ choice.votes|pluralize }}</li>
+*--- {% endfor %}
+*--- </ul>
+*--- <a href="{% url 'polls:detail' question.id %}">Vote again?</a>
+-Sekarang, buka /polls_app/1/ di browser Anda dan pilih di pertanyaan. 
+-Anda akan melihat halaman hasil yang diperbarui setiap kali Anda memilih. 
+-Jika Anda mengirimkan formulir tanpa memilih pilihan, Anda akan melihat pesan kesalahan.
+-NOTE: 
+----- Kode untuk tampilan vote() memiliki masalah kecil. Pertama-tama ia mendapatkan objek selected_choice dari database, 
+----- lalu menghitung nilai suara baru, dan kemudian menyimpannya kembali ke database. 
+----- Jika dua pengguna situs web Anda mencoba memberikan suara pada waktu yang bersamaan, 
+----- ini mungkin salah: Nilai yang sama, katakanlah 42, akan diambil untuk suara. 
+----- Kemudian, untuk kedua pengguna nilai baru dari 43 dihitung dan disimpan, 
+----- tetapi 44 akan menjadi nilai yang diharapkan.
+----- Ini disebut race condition. Jika Anda tertarik, Anda dapat membaca Avoiding race conditions using F() -- https://docs.djangoproject.com/en/2.2/ref/models/expressions/#avoiding-race-conditions-using-f
+----- untuk mempelajari bagaimana Anda dapat menyelesaikan masalah ini.
+
+keempat:
+gunakan generic views: kode lebih sedikit lebih baik:
+-views detail() dan results() itu sangat simple dan - seperti dijelaskan diatas, itu berlebihan.
+-Tampilan index(), yang menampilkan daftar polls_app, itu serupa.
+-Views ini mewakili kasus umum pengembangan Web dasar: mendapatkan data dari database sesuai dengan parameter yang dikirimkan dalam URL, 
+-memuat templat dan mengembalikan templat yang diberikan. Karena ini sangat umum, 
+-Django menyediakan jalan pintas, yang disebut sistem "generic views".
+-Views generik pola umum abstrak ke titik di mana Anda bahkan tidak perlu menulis kode Python untuk menulis aplikasi.
+-Mari mengonversi polls_app kita untuk menggunakan generic views system, 
+-sehingga kita dapat menghapus banyak kode kita sendiri. 
+-kita hanya perlu mengambil beberapa langkah untuk melakukan konversi. kita akan:
+*--- Konversikan URLconf.
+*--- Hapus beberapa tampilan lama yang tidak dibutuhkan
+*--- Perkenalkan pandangan baru berdasarkan pandangan umum Django.
+detail:
+Mengapa code-shuffle?
+*-Secara umum, saat menulis aplikasi Django, Anda akan mengevaluasi apakah generic views cocok untuk masalah Anda, 
+*-dan Anda akan menggunakannya dari awal, daripada refactoring kode Anda setengah jalan. 
+*-Namun tutorial ini sengaja difokuskan pada penulisan pandangan "jalan yang sulit" sampai sekarang, 
+*-untuk fokus pada konsep inti.
+*-karena pada dasarnya, Anda harus mengetahui matematika dasar sebelum mulai menggunakan kalkulator.
+
+kelima:
+Amend URLconf/Mengubah URLconf
+pertama, buka polls_app/urls.py URLconf dan ubah itu seperti ini:
+*-- from django.urls import path
+*-- from . import views
+*-- app_name = 'polls'
+*-- urlpatterns = [
+*--     path('', views.IndexView.as_view(), name='index'),
+*--     path('<int:pk>/', views.DetailView.as_view(), name='detail'),
+*--     path('<int:pk>/results/', views.ResultsView.as_view(), name='results'),
+*--     path('<int:question_id>/vote/', views.vote, name='vote'),
+*-- ]
+-Note
+*-bahwa nama pola yang cocok dalam string path dari pola kedua dan ketiga telah berubah dari <question_id> menjadi <pk>.
+
+keenam:
+Amend Views/Mengubah Views
+-selanjutnya, kita akan hapus index, detail, result kita yang lama dan menggunakan Django generic Views sebagai gantinya.
+-untuk melakukan ini, buka file polls_app/views.py dan ganti seperti ini:
+*-- from django.http import HttpResponseRedirect
+*-- from django.shortcuts import get_object_or_404, render
+*-- from django.urls import reverse
+*-- from django.views import generic
+*-- from .models import Choice, Question
+*-- class IndexView(generic.ListView):
+*--     template_name = 'polls/index.html'
+*--     context_object_name = 'latest_question_list'
+*--     def get_queryset(self):
+*--         """Return the last five published questions."""
+*--         return Question.objects.order_by('-pub_date')[:5]
+*-- class DetailView(generic.DetailView):
+*--     model = Question
+*--     template_name = 'polls/detail.html'
+*-- class ResultsView(generic.DetailView):
+*--     model = Question
+*--     template_name = 'polls/results.html'
+*-- def vote(request, question_id):
+*--     ... # same as above, no changes needed.
+-kita menggunakan dua generic views disini:ListView dan DetailView. mudah-nya, kedua views memiliki konsep:
+"menampilkan sebuah list dari object" dan "menampilkan sebuah halaman detail untuk sebuah particular tipe dari object atau untuk sebuah object yang spesifik."
+*--- beberapa generic view butuh tau model apa yang digunakan untuk halaman view tersebut. maka dari itu kita memerlukan attribut model(default).
+*--- DetailView generic view memiliki primary key value yang di rekam dari URL kita dipanggil "pk",
+---- jadi kita mengganti question_id ke pk untuk generic view.
+-secara default, DetailView generic view menggunakan sebuah template disebut <app name>/<model name>_detail.html.
+-di kasus kita ini, itu menggunakan template "polls_app/question_detail.html".
+-template_name adalah attribut yang digunakan untuk memberitahu Django untuk menggunakan sebuah template name yang spesifik,
+---didalam sebuah autogenerate default template name.
+-kita juga meyadari template_name untuk results list view - result view dan datail view mempunyai perbedaan perintah pada saat rendering,
+--walaupun mereka berdua memiliki parent yang sama: DetailView - dibelakang layar.
+-sangat mirip, ListView generic view menggunakan sebuah default template disebut <app name>/<model name>_list.html..
+--kita menggunakan template_name untuk memberitahu ListView untuk menggunakan templat kita "polls_app/index.html"
+-di tutorial sebelumnya, template memiliki context yang mengandung question dan latest_question_list context variabel.
+*-untuk DetailView si question variabel itu sudah di otomatiskan - sejak kita menggunakan sebuah Django model(Question),
+---Django sudah siap untuk men-determininasikan sebuah nama appropriate untuk context variabel.
+*-bagaimanapun, untuk ListView, generate otomatis context variabel adalah question_list. untuk menunggangi ini kita provide attribut context_object_name,
+---spesifik untuk menggunakan latest_question_list didalamanya.
+*-sebagai sebuah alternative, kamu harus mengubah template agar match/sesuai dengan context variabel default yang baru - 
+---tetapi itu hanya cara termudah untuk memberitahu django untuk menggunakan  variabel yang kamu mau.
+**** jalankan server, dan gunakan aplikasi polls_app kita yang basis nya sudah menggunakan generic view.
+**** untuk full dataildari generic view, lihat generic view documentation: https://docs.djangoproject.com/en/2.2/topics/class-based-views/

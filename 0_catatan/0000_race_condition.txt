@@ -1,0 +1,21 @@
+https://docs.djangoproject.com/en/2.2/ref/models/expressions/#avoiding-race-conditions-using-f
+
+Menghindari kondisi balapan menggunakan F () ¶
+-Manfaat lain yang bermanfaat dari F() adalah bahwa memiliki database- daripada Python - memperbarui nilai bidang menghindari kondisi balapan.
+-Jika dua utas Python mengeksekusi kode pada contoh pertama di atas, satu utas dapat mengambil, menambah, dan menyimpan nilai bidang setelah yang lain mengambilnya dari basis data. 
+*--Nilai yang disimpan oleh utas kedua akan didasarkan pada nilai asli; karya utas pertama hanya akan hilang.
+-Jika database bertanggung jawab untuk memperbarui bidang, prosesnya lebih kuat: itu hanya akan memperbarui bidang 
+*--berdasarkan nilai bidang dalam database ketika save() atau update() dijalankan, bukan berdasarkan pada bidangnya. 
+*--nilai saat instance diambil.
+
+F() tugas tetap setelah Model.save() ¶
+F() objek yang ditugaskan ke bidang model bertahan setelah menyimpan model instance dan 
+*--akan diterapkan pada setiap save(). Sebagai contoh:
+*------ reporter = Reporters.objects.get(name='Tintin')
+*------ reporter.stories_filed = F('stories_filed') + 1
+*------ reporter.save()
+*------ reporter.name = 'Tintin Jr.'
+*------ reporter.save()
+-stories_filed akan diperbarui dua kali dalam kasus ini. Jika awalnya 1, nilai akhir akan menjadi 3. 
+*--Kegigihan ini dapat dihindari dengan memuat ulang objek model setelah menyimpannya, 
+*--misalnya, dengan menggunakan refresh_from_db().

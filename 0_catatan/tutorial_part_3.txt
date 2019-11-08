@@ -1,0 +1,257 @@
+source: https://docs.djangoproject.com/en/2.2/intro/tutorial03/
+
+pada tutorial part 3 ini kita akan fokus membuat interface public "views"
+langkah pertama:
+-menulis lebih banyak views di polls/views.py
+*--- def detail(request, question_id):
+*---     return HttpResponse("You're looking at question %s." % question_id)
+*--- def results(request, question_id):
+*---     response = "You're looking at the results of question %s."
+*---     return HttpResponse(response % question_id)
+*--- def vote(request, question_id):
+*---     return HttpResponse("You're voting on question %s." % question_id)
+-hubungkan views ke dalam module polls_app.urlsdengan memanggil path() berikut:
+*--- from django.urls import path
+*--- from . import views
+*--- urlpatterns = [
+*---     # ex: /polls/
+*---     path('', views.index, name='index'),
+*---     # ex: /polls/5/
+*---     path('<int:question_id>/', views.detail, name='detail'),
+*---     # ex: /polls/5/results/
+*---     path('<int:question_id>/results/', views.results, name='results'),
+*---     # ex: /polls/5/vote/
+*---     path('<int:question_id>/vote/', views.vote, name='vote'),
+*--- ]
+-dan kita bisa mengakses views yang ditulos duatas denga menuliskan url:
+*--- /polls/34/
+*--- /polls/34/results/
+*--- /polls/34/vote/
+
+-Ketika seseorang meminta halaman dari situs web Anda - katakanlah, "/ polls / 34 /", 
+-Django akan memuat modul Python mysite.urls karena ditunjukkan oleh pengaturan ROOT_URLCONF. 
+-Itu menemukan variabel bernama urlpatterns dan melintasi pola secara berurutan. Setelah menemukan kecocokan di 'polls /', 
+-itu menghapus teks yang cocok ("polls /") dan mengirimkan teks yang tersisa - "34 /" - ke URLconf onf polls.urls untuk diproses lebih lanjut. 
+-Itu cocok dengan '<int: question_id> /', menghasilkan panggilan ke tampilan detail () seperti:
+*--- detail(request=<HttpRequest object>, question_id=34)
+
+-Bagian question_id = 34 berasal dari <int: question_id>. 
+-Menggunakan kurung sudut "menangkap" bagian dari URL dan mengirimkannya sebagai argumen kata kunci ke fungsi tampilan. 
+-Bagian: question_id> string menentukan nama yang akan digunakan untuk mengidentifikasi pola yang cocok, 
+-dan bagian <int: adalah konverter yang menentukan pola apa yang harus cocok dengan bagian ini dari jalur URL.
+
+-Tidak perlu menambahkan URL cruft seperti .html - kecuali Anda mau, dalam hal ini Anda dapat melakukan sesuatu seperti ini:
+*--- path('polls/latest.html', views.index),
+-tetapi, jangan lakukan itu, itu konyol.
+
+
+
+langkah kedua:
+-Tulis views yang benar-benar melakukan sesuatu
+-Setiap view bertanggung jawab untuk melakukan salah satu dari dua hal: 
+*--- mengembalikan objek HttpResponse yang berisi konten untuk halaman yang diminta, 
+*--- atau menaikkan pengecualian seperti Http404. Sisanya terserah padamu.
+
+-Tampilan Anda dapat membaca catatan dari database, atau tidak. 
+-Itu bisa menggunakan sistem templat seperti Django's - atau sistem templat Python pihak ketiga - atau tidak. 
+-Itu dapat menghasilkan file PDF, output XML, membuat file ZIP dengan cepat, apa pun yang Anda inginkan, menggunakan pustaka Python apa pun yang Anda inginkan.
+
+-Semua Django inginkan adalah HttpResponse itu. Atau pengecualian.
+
+-Karena nyaman, mari kita gunakan API basis data Django sendiri, yang kami bahas dalam Tutorial 2. 
+-Berikut adalah satu tikaman pada tampilan indeks () baru, yang menampilkan 5 pertanyaan polls_app terbaru dalam sistem, 
+-dipisahkan dengan koma, sesuai dengan tanggal publikasi:
+*--- from django.http import HttpResponse
+*--- from .models import Question
+*--- def index(request):
+*---     latest_question_list = Question.objects.order_by('-pub_date')[:5]
+*---     output = ', '.join([q.question_text for q in latest_question_list])
+*---     return HttpResponse(output)
+*--- # Leave the rest of the views (detail, results, vote) unchanged
+-ketika kita ketikan url ke index: /polls_app/ maka views nya sudah berubah, mengambil langsung data dari database.
+
+-membuat template:
+-- Namun, ada masalah di sini: desain halaman sulit dikodekan dalam tampilan. 
+-- Jika Anda ingin mengubah tampilan halaman, Anda harus mengedit kode Python ini. 
+-- Jadi mari kita gunakan sistem template Django untuk memisahkan desain dari Python dengan membuat template yang dapat digunakan tampilan.
+
+-- Pertama, buat direktori yang disebut templates di direktori polls_app Anda. Django akan mencari templates di sana.
+
+-- Pengaturan TEMPLATES proyek Anda menjelaskan bagaimana Django akan memuat dan merender template. 
+-- File pengaturan default mengonfigurasi backend DjangoTemplates yang opsi APP_DIRSnya disetel ke True. 
+-- Sesuai konvensi, DjangoTemplates mencari subdirektori "templates" di masing-masing INSTALLED_APPS.
+
+-- Di dalam direktori templates yang baru saja Anda buat, buat direktori lain yang disebut polling, dan di dalamnya buat file bernama index.html. 
+-- Dengan kata lain, template Anda harus di polling /templat/polling/index.html. 
+-- Karena cara kerja loader template app_directories seperti dijelaskan di atas, 
+-- Anda dapat merujuk ke template ini dalam Django hanya sebagai polls_app/index.html.
+
+-template namespacing:
+*-- Sekarang kita mungkin bisa lolos dengan menempatkan template kita secara langsung di polls_app/template(daripada membuat subdirektori polls_app lain), 
+*-- tetapi itu sebenarnya akan menjadi ide yang buruk. Django akan memilih template pertama yang ditemukannya yang namanya cocok, 
+*-- dan jika Anda memiliki template dengan nama yang sama di aplikasi yang berbeda, Django tidak akan dapat membedakannya. 
+*-- Kita harus bisa mengarahkan Django ke arah yang benar, dan cara termudah untuk memastikan ini adalah dengan menempatkan mereka di namespace. 
+*-- Yaitu, dengan meletakkan templat-templat tersebut di dalam direktori lain yang dinamai untuk aplikasi itu sendiri.
+
+
+-kita buat folder polls_app di dalam folder templates, lalu di dalam nya buat file index.html
+-tulis code berikut pada index.html:
+*--- {% if latest_question_list %}
+*---     <ul>
+*---     {% for question in latest_question_list %}
+*---         <li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li>
+*---     {% endfor %}
+*---     </ul>
+*--- {% else %}
+*---     <p>No polls are available.</p>
+*--- {% endif %}
+
+
+-sekarang kita bisa mengganti vies index pada polls/views.py untuk menggunakan template:
+*--- from django.http import HttpResponse
+*--- from django.template import loader
+*--- from .models import Question
+*--- def index(request):
+*---     latest_question_list = Question.objects.order_by('-pub_date')[:5]
+*---     template = loader.get_template('polls/index.html')
+*---     context = {
+*---         'latest_question_list': latest_question_list,
+*---     }
+*---     return HttpResponse(template.render(context, request))
+
+-Kode itu memuat template yang disebut polls_app/index.html dan meneruskannya context. 
+-context nya adalah nama variabel template pemetaan kamus untuk objek Python(mengarah pada folder apapun di dalam folder template).
+
+-Muat halaman dengan mengarahkan browser Anda di "/polls_app/", dan Anda akan melihat daftar berpoin yang berisi pertanyaan 
+-"What's Up?" dari Tutorial 2. Tautan mengarah ke halaman detail pertanyaan.
+
+
+-Shortcut: render () ¶
+-Ini adalah idiom yang sangat umum untuk memuat templat, mengisi konteks dan mengembalikan objek HttpResponse dengan hasil templat yang diberikan. 
+-Django menyediakan jalan pintas. Ini tampilan penuh index(), ditulis ulang:
+*--- from django.shortcuts import render
+*--- from .models import Question
+*--- def index(request):
+*---     latest_question_list = Question.objects.order_by('-pub_date')[:5]
+*---     context = {'latest_question_list': latest_question_list}
+*---     return render(request, 'polls/index.html', context)
+
+-Perhatikan bahwa setelah kami melakukan ini dalam semua tampilan ini, kami tidak perlu lagi mengimpor loader dan HttpResponse (Anda akan ingin menyimpan HttpResponse jika Anda masih memiliki metode rintisan untuk detail, results, dan vote).
+-Fungsi render() mengambil objek permintaan sebagai argumen pertama, 
+-nama templat sebagai argumen kedua dan kamus sebagai argumen ketiga opsional. 
+-Ini mengembalikan objek HttpResponse dari template yang diberikan yang diberikan dengan konteks yang diberikan.
+
+
+-pemeliharaan kesalahan 404 pada view detail
+-sekarang kita coba menangani question detail view - halaman ini menampilkan teks question yang diberikan polls_app
+-ini view nya(polls_app/view):
+*-- from django.http import Http404
+*-- from django.shortcuts import render
+*-- from .models import Question
+*-- def detail(request, question_id):
+*--     try:
+*--         question = Question.objects.get(pk=question_id)
+*--     except Question.DoesNotExist:
+*--         raise Http404("Question does not exist")
+*--     return render(request, 'polls/detail.html', {'question': question})
+-Konsep baru di sini: Tampilan memunculkan pengecualian Http404 jika pertanyaan dengan ID yang diminta tidak ada.
+-Kami akan membahas apa yang dapat Anda masukkan ke dalam polls_app/detail.html template itu sedikit kemudian, 
+-tetapi jika Anda ingin agar contoh di atas berfungsi dengan cepat, file berisi hanya:
+*--- (polls_app/templates/polls_app/detail.html)
+*--- {{ question }}
+-akan membantu Anda memulai sekarang(sudah bisa dijalankan pada browser).
+-kode diatas memungkinkan kita untuk menampilkan pesan kesalahan ketika 404 terjadi.
+-dalam kasus ini 404 terjadi ketika idyang dimasukan keurl itu tidak sesusai dengan question_id pada database.
+-makakita akan menampilkan pesan kesalahannya.
+
+
+-Shortcut: get_object_or_404()
+-ini sangat ringkas ketimbang membuat try: dan get() lalu Except dan raise Http404 jika object tidak tersedia.
+-django sudah menyiapkan sebuah shortcut get_object_or_404() hanya dengan:
+*--- from django.shortcuts import get_object_or_404, render
+*--- from .models import Question
+*--- def detail(request, question_id):
+*---     question = get_object_or_404(Question, pk=question_id)
+*---     return render(request, 'polls/detail.html', {'question': question})
+-function get_object_or_404() mengambil model django sebagai argument pertama dan keyword number argument(question_id).
+-dia mengoper ke fungsi get() di model manager. dan dia raises Http404 jika object tidak tersedia(otomatis melakukan ini jika menggunakan get_obeject_or_404).
+
+-philosophy:
+*- tanya:
+*-- mengapa kita menggunakan fungsi helper get_object_or_404() dalam meng-otomatiskan 
+*-- penangkapan exception ObjectDoesNotExist(object tidak tersedia) di level tertinggi,
+*-- atau mendapatkan model API raise Http404 didalam ObjectDoesNotExist. mengapa?
+*- jawab:
+*-- karena itu menjadikan layer model berpasangan ke layer view. 
+*-- satu dari sekian banyak keunggulan design dari django ini adalah untuk me-maintain berpisahkan pasangan antara layer.
+*-- berberapa controlled yang berpasangan sudah diperkenalkan didalam modul django.shortcut.
+
+-disana juga tersedia sebuah function get_list_or_404(), bekerja hanya sebagai get_object_or_404()
+-except menggunakan filter() didalam get(). dan ini akan raises Http404 jika list nya kosong.
+
+
+-menggunakan sistem template:
+-kembali ke detail() view di aplikasi polls_app kita. berikan context variabel question, dan polls_app/detail.html akan seperti ini:
+*-- <h1>{{ question.question_text }}</h1>
+*-- <ul>
+*-- {% for choice in question.choice_set.all %}
+*--     <li>{{ choice.choice_text }}</li>
+*-- {% endfor %}
+*-- </ul>
+-sistem templapte menggunakan dit-loopkup syntax untuk mengakses variabel atribut(var yang ada di dalam class,Question) ex: {{ question.question_text }}
+-django memiliki directory lookup di object question. jika itu gagal, itu akan mencoba sebuah atributte lookup - dalam kasusu ini.
+-jika attribute lookup gagal, ia akan mencoba sebuah list-index lookup.
+
+-method yang dipanggil didalam {% for %} loop: question.choice_set.all ini diterjemahkan sebagai kode python question.choice_set.all()
+-dan akan mengembalikan object Choice dalam setiap perulangan for nya.
+
+
+-menghapus hardcoded URLs di templates
+-ingat, ketika kita menulis link ke sebuah question di template polls_app/index.html, link nya ditulis seperti ini:
+*--- <li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li>
+-Masalah dengan pendekatan hardcoded, yang dipasangkan dengan ketat ini adalah sulit untuk mengubah URL proyek dengan banyak template. 
+-Namun, karena Anda mendefinisikan argumen name dalam fungsi path() dalam modul polls.urls, 
+-Anda dapat menghapus ketergantungan pada path URL spesifik yang ditentukan dalam konfigurasi url Anda 
+-dengan menggunakan tag template {% url%}:
+*--- <li><a href="{% url 'detail' question.id %}">{{ question.question_text }}</a></li>
+-Cara kerjanya adalah dengan mencari definisi URL seperti yang ditentukan dalam modul polls.urls. 
+-Anda dapat melihat dengan tepat di mana nama URL dari 'detail' didefinisikan di bawah ini:
+*--- ...
+*--- # the 'name' value as called by the {% url %} template tag
+*--- path('<int:question_id>/', views.detail, name='detail'),
+*--- ...
+
+-Jika Anda ingin mengubah URL tampilan detail polls_app menjadi sesuatu yang lain, 
+-mungkin menjadi sesuatu seperti polls_app/spesifics/12/ alih-alih melakukannya di templat (atau templat) 
+-Anda akan mengubahnya di polls_app/urls.py:
+*--- ...
+*--- # added the word 'specifics'
+*--- path('specifics/<int:question_id>/', views.detail, name='detail'),
+*--- ...
+-maka ketika di klik dari index.html akan diarahkan ke polls_app/spesifics/2/
+
+
+-namespace nama URL
+-Proyek tutorial hanya memiliki satu app, polls_app. Dalam proyek Django nyata, mungkin ada lima, sepuluh, dua puluh app atau lebih. 
+-Bagaimana Django membedakan nama URL di antara mereka? Misalnya, polls_app memiliki tampilan detail, dan mungkin juga aplikasi pada proyek yang sama yaitu untuk blog. 
+-Bagaimana cara membuatnya agar Django tahu tampilan aplikasi mana yang harus dibuat untuk url saat menggunakan tag templat {% url%}?
+
+-Jawabannya adalah menambahkan namespace ke URLconf Anda. Dalam file polls_app/urls.py, 
+-silakan dan tambahkan app_name untuk mengatur namespace aplikasi:
+*--- from django.urls import path
+*--- from . import views
+*--- app_name = 'polls'
+*--- urlpatterns = [
+*---     path('', views.index, name='index'),
+*---     path('<int:question_id>/', views.detail, name='detail'),
+*---     path('<int:question_id>/results/', views.results, name='results'),
+*---     path('<int:question_id>/vote/', views.vote, name='vote'),
+*--- ]
+-Sekarang ubah templat polls_app/index.html Anda dari:
+*--- <li><a href="{% url 'detail' question.id %}">{{ question.question_text }}</a></li>
+-untuk menunjuk pada tampilan detail namespace:
+*--- <li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a></li>
+-dan sekarang, jika kalian memiliki banyak app, dan diantara app itu ada yang memiliki nama view yang sama, 
+-django dapat membedakannya.
+
+

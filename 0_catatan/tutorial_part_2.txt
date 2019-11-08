@@ -1,0 +1,235 @@
+configurasi untuk membuat app di django, part 2(DATABASE Settings):
+source: https://docs.djangoproject.com/en/2.2/intro/tutorial02/
+langkah pertama:
+-setting database pada project mywebsite/setting.py : cari DATABASES
+-Beberapa aplikasi ini menggunakan setidaknya satu tabel basis data, jadi kita perlu membuat tabel dalam database sebelum kita dapat menggunakannya.
+-menggunakan, pada comand: python managa.py migrate
+-Perintah migrate melihat pada pengaturan INSTALLED_APPS dan membuat tabel database yang diperlukan sesuai dengan pengaturan basis data di file mysite/settings.py Anda 
+-dan migrasi basis data yang dikirimkan bersama dengan App(kami akan membahasnya nanti). 
+-Anda akan melihat pesan untuk setiap migrasi yang berlaku. 
+-Jika Anda tertarik, jalankan command-line client untuk database Anda dan 
+ *-- ketik \ dt (PostgreSQL), 
+ *-- SHOW TABLES; (MySQL), 
+ *-- .schema (SQLite), 
+ *-- atau SELECT TABLE_NAME FROM USER_TABLES; (Oracle) 
+ *-- untuk menampilkan tabel yang dibuat Django.
+-Untuk yang minimalis
+ *--- Seperti yang kami katakan di atas, aplikasi default disertakan untuk common case, tetapi tidak semua orang membutuhkannya. 
+ *--- Jika Anda tidak memerlukan salah satu atau semuanya, jangan ragu untuk berkomentar atau menghapus baris yang sesuai dari INSTALLED_APPS 
+ *--- sebelum menjalankan migrasi. Perintah migrasi hanya akan menjalankan migrasi untuk aplikasi di INSTALLED_APPS.
+
+langkah kedua:
+-membuat model, di polls_app/models.py
+-philosophy:
+*-- Model adalah satu-satunya, sumber kebenaran definitif tentang data Anda. 
+*-- Ini berisi bidang dan perilaku penting dari data yang Anda simpan. Django mengikuti Prinsip DRY PRINCIPLE. 
+*-- Tujuannya adalah untuk menentukan model data Anda di satu tempat dan secara otomatis mendapatkan hal-hal dari itu.
+*-- Ini termasuk migrasi - tidak seperti di Ruby On Rails, misalnya, migrasi sepenuhnya berasal dari file model Anda, 
+*-- dan pada dasarnya hanya history yang dapat digulirkan Django untuk memperbarui skema database Anda agar sesuai dengan model Anda saat ini.
+
+-di dalam app simple kita polls_app, kita akan membuat dua model: Question dan Choice. 
+*-- model Question memiliki pertanyaan dan tanggal publikasinya.
+*-- model Choice memiliki dua field: teks pilihan dan perhitungan suara. setiap Choice dikaitkan dengan Question.
+-edit polls_app/models.py:
+	from django.db import models
+
+	class Question(models.Model):
+	    question_text = models.CharField(max_length=200)
+	    pub_date = models.DateTimeField('date published')
+	class Choice(models.Model):
+	    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+	    choice_text = models.CharField(max_length=200)
+	    votes = models.IntegerField(default=0)
+-Kode ini mudah. Setiap model diwakili oleh kelas subclass django.db.models.Model. 
+-Setiap model memiliki sejumlah variabel kelas, masing-masing mewakili bidang database dalam model.
+
+-Setiap bidang diwakili oleh turunan dari kelas Bidang - mis., CharField untuk bidang karakter dan DateTimeField untuk datetimes. 
+-Ini memberitahu Django tipe data apa yang dimiliki oleh masing-masing bidang.
+
+langkah ketiga:
+-meng-aktifkan models
+-Sedikit kode model itu memberi Django banyak informasi. Dengan itu, Django dapat:
+*--- Buat skema basis data (CREATE TABLE pernyataan) untuk aplikasi ini.
+*--- Buat API akses database Python untuk mengakses objek Pertanyaan dan Pilihan.
+*--- Tapi pertama-tama kita harus memberi tahu proyek kita bahwa aplikasi polls_app sudah diinstal.
+-Philoshopy:
+*-- Aplikasi Django "pluggable": Anda dapat menggunakan App di beberapa proyek, 
+*-- dan Anda dapat mendistribusikan App, karena mereka tidak harus terikat dengan instalasi Django yang diberikan.
+-untuk menambahkan app ke project kitabisa setting INSTALLED_APPS pada file mywebsite/setting.py
+-kita tambahkan class PollsAppConfig pada file polls_app/apps.py jadi pada list INSTALLED_APPS kita bisa tambahkan 'polls_app.apps.PollsAppConfig'
+-nah sekarang django tau nih bahwa kita akan include polls_app app.
+-coba jalankan command:
+*--- python manage.py makemigrations <name dari app, ada di file apps.py>
+-Ada perintah yang akan menjalankan migrasi untuk Anda dan mengelola skema basis data Anda secara otomatis - yang disebut migrasi, 
+-dan kami akan segera membahasnya - tetapi pertama-tama, mari kita lihat SQL apa yang akan dijalankan oleh migrasi itu. 
+-Perintah sqlmigrate mengambil nama migrasi dan mengembalikan SQL mereka:
+*-- python manage.py sqlmigrate polls 0001
+-penjelasan hasil command diatas:
+*-- Nama tabel secara otomatis dihasilkan dengan menggabungkan nama aplikasi (polls_app) dan nama huruf kecil dari model - Question dan Choice.(Anda dapat mengganti perilaku ini.)
+*-- Kunci primer (ID) ditambahkan secara otomatis. (Anda dapat menimpa ini juga.)
+*-- Dengan konvensi, Django menambahkan "_id" ke foreign key field name. (Ya, Anda dapat menimpa ini juga.)
+*-- Ini disesuaikan dengan basis data yang Anda gunakan, sehingga jenis filed database seperti auto_increment (MySQL), 
+*-- serial (PostgreSQL), atau integer autoincrement primary key (SQLite) ditangani untuk Anda secara otomatis. 
+*-- Hal yang sama berlaku untuk mengutip nama bidang, Menggunakan tanda kutip ganda atau tanda kutip tunggal.
+-sqlmigrate, tidak melakukan migration pada database, ini hanya menampilkan ke layar sehingga kita dapat melihat apa yang menurut SQL Django butuhkan.
+-ini berguna untuk memeriksa apa yang akan dilakukan Django atau jika Anda memiliki administrator database yang memerlukan skrip SQL untuk perubahan.
+-kita bisa mengecek apakah ada beberapa masalah di project kita tanpa membuat migrasi/migration atau menyentuh database:
+*--- menggunakan command berikut: python manage.py check
+
+langkah keempat:
+-lalukan migrate lagi untuk membuat table model tesebut di database kita.
+*--- python manage.py migrate
+-Perintah migrate mengambil semua migrasi yang belum diterapkan (Django melacak mana yang diterapkan menggunakan tabel khusus dalam database Anda yang disebut django_migrations) 
+-dan menjalankannya terhadap basis data Anda - pada dasarnya, menyinkronkan perubahan yang Anda buat pada model dengan skema dalam database.
+-migrate sangat powerfull dan memungkinkan Anda mengubah model dari waktu ke waktu, saat Anda mengembangkan proyek Anda, 
+-tanpa perlu menghapus database atau tabel Anda dan membuat yang baru - itu berspesialisasi dalam memutakhirkan database Anda secara langsung, tanpa kehilangan data. 
+-ingat panduan tiga langkah untuk membuat perubahan model:
+*--- Ubah model Anda (di models.py). 
+*--- Jalankan: python manage.py makemigrations -- untuk membuat migrasi untuk perubahan tersebut.
+*--- Jalankan: python manage.py migrate - untuk menerapkan perubahan itu ke database.
+*--Alasan mengapa ada perintah terpisah untuk membuat dan menerapkan migrasi adalah karena Anda akan melakukan migrasi ke sistem kontrol versi Anda dan mengirimkannya dengan aplikasi Anda; mereka tidak hanya membuat pengembangan Anda lebih mudah, mereka juga dapat digunakan oleh pengembang lain dan dalam produksi.
+
+langkah kelima:
+bermain dengan rest api:
+-Sekarang, mari lompat ke shell Python interaktif dan bermain-main dengan API gratis yang diberikan Django. 
+*--- Untuk memanggil shell Python, gunakan perintah ini: python manage.py shell
+-Kami menggunakan ini alih-alih hanya mengetik "python", karena manage.py menetapkan variabel lingkungan DJANGO_SETTINGS_MODULE, 
+-yang memberi Django jalur impor Python ke file mywebsite / settings.py Anda.
+-coba kita lakukan perintah pada shell python: -- kita bermain dengan api
+*---- >>> from polls.models import Choice, Question
+*---- >>> Question.objects.all() # akan menampilkan <QuerySet[]> -- belum ada questions pada system.
+*---- # Create a new Question.
+*---- # Support for time zones is enabled in the default settings file, so
+*---- # Django expects a datetime with tzinfo for pub_date. Use timezone.now()
+*---- # instead of datetime.datetime.now() and it will do the right thing.
+*---- >>> from django.utils import timezone
+*---- >>> q = Question(question_text="What's new?", pub_date=timezone.now())
+
+*---- # Save the object into the database. You have to call save() explicitly.
+*---- >>> q.save()
+*---- >>> # Now it has an ID.
+
+*---- # Now it has an ID.
+*---- >>> q.id
+*---- >>> 1
+
+*---- # Access model field values via Python attributes.
+*---- >>> q.question_text
+*---- >>> "What's new?"
+*---- >>> q.pub_date
+*---- >>> datetime.datetime(2012, 2, 26, 13, 0, 0, 775217, tzinfo=<UTC>)
+
+*---- # Change values by changing the attributes, then calling save().
+*---- >>> q.question_text = "What's up?"
+*---- >>> q.save()
+
+*---- # objects.all() displays all the questions in the database.
+*---- >>> Question.objects.all()
+*---- >>> <QuerySet [<Question: Question object (1)>]>
+
+-kalo kita perhatikan <QuerySet [<Question: Question object (1)>]> itu tidak membantu kita untuk merepresentasikan object ini.
+-ayo kita coba perbaiki dengan mengedit model Question pada (polls_app/models.py) dan tambahkan sebuah method __str__() ke Question dan Choice.
+-Sangat penting untuk menambahkan metode __str __ () ke model Anda, tidak hanya untuk kenyamanan Anda sendiri ketika berhadapan dengan prompt interaktif, 
+-tetapi juga karena representasi objek digunakan di seluruh admin Django yang dibuat secara otomatis.
+*---- ketika melakukan: >>> Question.objects.all() --- akan menampilkan hasil yang -humaneble-
+-perhatikan: setiap perubahan yang dibuat, pastikan untuk membuka ulang python manage.py shell
+
+*-- # Django provides a rich database lookup API that's entirely driven by
+*-- # keyword arguments.
+*-- >>> Question.objects.filter(id=1)
+*-- <QuerySet [<Question: What's up?>]>
+*-- >>> Question.objects.filter(question_text__startswith='What')
+*-- <QuerySet [<Question: What's up?>]>
+
+*-- # Get the question that was published this year.
+*-- >>> from django.utils import timezone
+*-- >>> current_year = timezone.now().year
+*-- >>> Question.objects.get(pub_date__year=current_year)
+*-- <Question: What's up?>
+
+*-- # Lookup by a primary key is the most common case, so Django provides a
+*-- # shortcut for primary-key exact lookups.
+*-- # The following is identical to Question.objects.get(id=1).
+*-- >>> Question.objects.get(pk=1)
+*-- <Question: What's up?>
+
+*-- # pastikan custom method kita bekerja.
+*-- >>> q = Question.objects.get(pk=1)
+*-- >>> q.was_published_recently()
+*-- True
+
+*-- # Give the Question a couple of Choices. The create call constructs a new
+*-- # Choice object, does the INSERT statement, adds the choice to the set
+*-- # of available choices and returns the new Choice object. Django creates
+*-- # a set to hold the "other side" of a ForeignKey relation
+*-- # (e.g. a question's choice) which can be accessed via the API.
+*-- >>> q = Question.objects.get(pk=1)
+
+*-- # Display any choices from the related object set -- none so far.
+*-- >>> q.choice_set.all()
+*-- <QuerySet []>
+
+*-- # Create three choices.
+*-- >>> q.choice_set.create(choice_text='Not much', votes=0)
+*-- <Choice: Not much>
+*-- >>> q.choice_set.create(choice_text='The sky', votes=0)
+*-- <Choice: The sky>
+*-- >>> c = q.choice_set.create(choice_text='Just hacking again', votes=0)
+
+*-- # Choice objects have API access to their related Question objects.
+*-- >>> c.question
+*-- <Question: What's up?>
+
+*-- # And vice versa: Question objects get access to Choice objects.
+*-- >>> q.choice_set.all()
+*-- <QuerySet [<Choice: Not much>, <Choice: The sky>, <Choice: Just hacking again>]>
+*-- >>> q.choice_set.count()
+*-- 3
+
+*-- # The API automatically follows relationships as far as you need.
+*-- # Use double underscores to separate relationships.
+*-- # This works as many levels deep as you want; there's no limit.
+*-- # Find all Choices for any question whose pub_date is in this year
+*-- # (reusing the 'current_year' variable we created above).
+*-- >>> Choice.objects.filter(question__pub_date__year=current_year)
+*-- <QuerySet [<Choice: Not much>, <Choice: The sky>, <Choice: Just hacking again>]>
+
+*-- # Let's delete one of the choices. Use delete() for that.
+*-- >>> c = q.choice_set.filter(choice_text__startswith='Just hacking')
+*-- >>> c.delete()
+
+
+
+langkah keenam:
+Perkenalan Django Admin:
+-Philosophy:
+*--- Membuat situs admin untuk staf atau klien Anda untuk menambah, mengubah, dan menghapus konten adalah pekerjaan yang membosankan yang tidak memerlukan banyak kreativitas. 
+*--- Untuk alasan itu, Django sepenuhnya mengotomatiskan pembuatan antarmuka admin untuk model.
+*--- Django ditulis di lingkungan ruang redaksi, dengan pemisahan yang sangat jelas antara "penerbit konten" dan situs "publik". 
+*--- Manajer situs menggunakan sistem untuk menambahkan berita, peristiwa, skor olahraga, dll., Dan konten itu ditampilkan di situs publik. 
+*--- Django memecahkan masalah membuat antarmuka terpadu untuk administrator situs untuk mengedit konten.
+*---Admin tidak dimaksudkan untuk digunakan oleh pengunjung situs. Ini untuk pengelola situs.
+
+-pertama, kita hatus membuat user admin yang bisa login ke site admin.
+*--- pada command kita bisa tuliskan: python manage.py createsuperuser
+*--- lalu kita akan membuat dengan username(admin), email(admin@example.com) dan password(admin).
+-jika sudah, kita start server: python manage.py runserver
+-lalu, ke vroser url: http://127.0.0.1:8000/admin
+-dan masukan username dan password yang sebelumnya sudah kita buat
+-lalu kita akan masuk ke halaman admin.
+-Anda akan melihat beberapa jenis konten yang dapat diedit: Groups dan Users. Mereka disediakan oleh django.contrib.auth, kerangka otentikasi yang dikirimkan oleh Django.
+
+-buat polls_app dapat dimodifikasi di admin site
+-Hanya satu hal yang harus dilakukan: kita perlu memberi tahu admin bahwa objek Question memiliki antarmuka admin. 
+-Untuk melakukan ini, buka file polls_app / admin.py, dan edit agar terlihat seperti ini:
+*--- from django.contrib import admin
+*--- # Register your models here.
+*--- # dari modul models.py yang ada di folder yang sama, dan import class Question
+*--- from .models import Question
+*--- # daftarkan model Question ke admin site
+*--- admin.site.register(Question)
+-dan sekrang django tahu bahwa model Question sudahdi daftar kan pada admin site, sekarang admin site akan menampilkan Question.
+-kita sudah bisa mengubah ataupun menambahkan Question pada admin site.
+-karena timezone di jakarta beda 7 jam dengan UTC, maka pada file mywebsite/settings.py ubah: TIME_ZONE = 'Asia/Bangkok' -- +07:00
+
+-
