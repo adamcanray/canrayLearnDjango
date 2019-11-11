@@ -11,9 +11,9 @@ Structure Files:
   * **tutorial_part_1.txt** -- catatan panjang perjalanan saya pada tutorial django part_1 - Source: https://docs.djangoproject.com/en/2.2/intro/tutorial01/
   * **tutorial_part_2.txt** -- catatan panjang perjalanan saya pada tutorial django part_2 - Source: https://docs.djangoproject.com/en/2.2/intro/tutorial02/
   * **tutorial_part_3.txt** -- catatan panjang perjalanan saya pada tutorial django part_3 - Source: https://docs.djangoproject.com/en/2.2/intro/tutorial03/
-  * **tutorial_part_4.txt** -- catatan panjang perjalanan saya pada tutorial django part_1 - Source: https://docs.djangoproject.com/en/2.2/intro/tutorial04/
+  * **tutorial_part_4.txt** -- catatan panjang perjalanan saya pada tutorial django part_4 - Source: https://docs.djangoproject.com/en/2.2/intro/tutorial04/
   * **tutorial_part_5.txt** -- catatan panjang perjalanan saya pada tutorial django part_5 - Source: https://docs.djangoproject.com/en/2.2/intro/tutorial05/
-  * **tutorial_part_6.txt** -- catatan panjang perjalanan saya pada tutorial django part_ - Source: https://docs.djangoproject.com/en/2.2/intro/tutorial06/
+  * **tutorial_part_6.txt** -- catatan panjang perjalanan saya pada tutorial django part_6 - Source: https://docs.djangoproject.com/en/2.2/intro/tutorial06/
   * **tutorial_part_7.txt** -- catatan panjang perjalanan saya pada tutorial django part_7 - Source: https://docs.djangoproject.com/en/2.2/intro/tutorial07/
   * **reusable_apps.txt** -- bagaimana sebuah **apps** yang kita buat pada **project Django** itu bisa digunakan berkali-kali(**efisiensi**).
 * mywebsite/
